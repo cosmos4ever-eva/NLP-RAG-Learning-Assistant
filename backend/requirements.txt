@@ -1,0 +1,30 @@
+# Web Framework
+fastapi==0.115.6
+uvicorn==0.34.0
+python-multipart==0.0.20
+
+# Document Parsing
+pypdf==5.1.0
+python-pptx==1.0.2
+
+# Text Processing
+jieba==0.42.1
+
+# Knowledge Graph
+networkx==3.4.2
+pyvis==0.3.2
+
+# Vector Search
+sentence-transformers==3.3.1
+faiss-cpu==1.9.0.post1
+scikit-learn==1.5.2
+
+# LLM (choose one or more)
+openai==1.57.4
+
+# Data & Storage
+sqlite3  # built-in
+datasets==3.1.0
+
+# Frontend
+streamlit==1.41.1
