@@ -26,15 +26,19 @@ async def health():
     return HealthResponse(status="ok", version="0.1.0")
 
 
-# 各模块路由注册（随着开发逐步打开注释）
-# from parsing import router as parsing_router
-# from knowledge_graph import router as kg_router
+# 各模块路由注册
+from parsing import router as parsing_router
+from knowledge_graph import router as kg_router
+from vector_search import router as vs_router
+app.include_router(parsing_router, prefix="/api/parsing", tags=["课程资料解析"])
+app.include_router(kg_router, prefix="/api/kg", tags=["知识图谱"])
+app.include_router(vs_router, prefix="/api/search", tags=["向量检索"])
+
+# 后续模块（逐步打开）
 # from vector_search import router as vs_router
 # from graph_rag import router as rag_router
 # from learning_path import router as lp_router
 # from quiz_gen import router as quiz_router
-# app.include_router(parsing_router, prefix="/api/parsing", tags=["课程资料解析"])
-# app.include_router(kg_router, prefix="/api/kg", tags=["知识图谱"])
 # app.include_router(vs_router, prefix="/api/search", tags=["向量检索"])
 # app.include_router(rag_router, prefix="/api/rag", tags=["Graph-RAG 问答"])
 # app.include_router(lp_router, prefix="/api/learning", tags=["学习路径"])
