@@ -1,0 +1,430 @@
+{
+  "entities": [
+    {
+      "id": "NLP", "name": "自然语言处理", "type": "概念", "lecture": "L2",
+      "description": "Natural Language Processing，让计算机理解、生成和处理人类语言的技术总称。涵盖从底层文本处理到高层语义理解的完整技术栈。",
+      "key_points": ["处理文本和语音数据", "底层：分词、归一化、编辑距离", "中层：语言模型、词嵌入、序列模型", "高层：问答系统、机器翻译、对话系统"]
+    },
+    {
+      "id": "text_preprocessing", "name": "文本预处理", "type": "方法", "lecture": "L2",
+      "description": "对原始文本进行清洗、归一化、标准化，使其适合后续分析或建模。是NLP pipeline的第一步，直接影响下游任务效果。",
+      "key_points": ["原始文本 → 可用数据", "包括分词、归一化、去停用词", "中英文预处理差异大"]
+    },
+    {
+      "id": "tokenization", "name": "分词/Tokenization", "type": "方法", "lecture": "L2",
+      "description": "将连续文本切分为词或子词单元（token）。中文分词比英文更复杂，因为中文词与词之间没有空格分隔。",
+      "key_points": ["英文：按空格/tokenize", "中文：需要专门分词工具（jieba等）", "分词歧义是中文分词的主要难点"],
+      "formula": "英文: tokens = text.split(' ')，中文: 基于词典或统计模型切分"
+    },
+    {
+      "id": "regex", "name": "正则表达式", "type": "方法", "lecture": "L2",
+      "description": "用模式字符串精确匹配、查找、替换文本。是文本预处理的基础工具，广泛用于数据清洗和模式提取。",
+      "key_points": ["灵活的模式匹配语言", "常用于提取邮箱、日期、数字等", "需注意贪婪匹配vs非贪婪匹配"],
+      "formula": "示例: \\b[A-Za-z]+@[A-Za-z]+\\.[A-Za-z]+\\b 匹配邮箱地址"
+    },
+    {
+      "id": "normalization", "name": "文本归一化", "type": "方法", "lecture": "L2",
+      "description": "将文本转换为统一标准形式，包括大小写转换、词形还原、词干提取等。归一化能减少词汇表大小、提高模型泛化能力。",
+      "key_points": ["大小写统一（通常转小写）", "词干提取 vs 词形还原（容易混淆）", "注意：某些场景（如NER）保留大小写有意义"]
+    },
+    {
+      "id": "stemming", "name": "词干提取", "type": "方法", "lecture": "L2",
+      "description": "将单词还原为词干形式，通过去除词缀实现。规则简单、速度快，但可能产生非实际单词。",
+      "key_points": ["规则简单：去掉 -ing/-ed/-s 等后缀", "速度快，适合大规模文本", "输出可能不是合法单词（如 running→run，但 studies→studi）", "典型算法：Porter Stemmer、Snowball Stemmer"]
+    },
+    {
+      "id": "lemmatization", "name": "词形还原", "type": "方法", "lecture": "L2",
+      "description": "将单词还原为词典中的基本形式（词元），需要词典和词性标注辅助。比词干提取更精确，输出一定是合法单词。",
+      "key_points": ["输出一定是合法单词", "需要词性信息（名词/动词/形容词）", "比词干提取更慢但更准确", "studies→study（而非studi）"]
+    },
+    {
+      "id": "stopwords", "name": "停用词", "type": "概念", "lecture": "L2",
+      "description": "高频但对语义贡献较小的词，如\"的\"、\"是\"、\"the\"、\"a\"。在信息检索和文本分类中常被过滤以减少噪音。",
+      "key_points": ["中英文都有停用词表", "搜索场景：去掉停用词提高效率", "注意：某些任务不能盲目去停用词（如情感分析中'not'很关键）"]
+    },
+    {
+      "id": "edit_distance", "name": "编辑距离", "type": "方法", "lecture": "L2",
+      "description": "衡量两个字符串相似度所需的最少编辑操作次数（插入、删除、替换），又称Levenshtein距离。是拼写纠错和模糊匹配的基础。",
+      "key_points": ["三种操作：插入、删除、替换，各代价为1", "动态规划求解: O(mn)时间，O(mn)空间", "应用：拼写检查、DNA序列比对、OCR纠错"],
+      "formula": "D[i,j] = min(D[i-1,j]+1, D[i,j-1]+1, D[i-1,j-1]+(s1[i]≠s2[j]?1:0))"
+    },
+    {
+      "id": "ngram", "name": "N-gram", "type": "模型", "lecture": "L3",
+      "description": "基于马尔可夫假设，用前N-1个词预测下一个词的概率模型。N=1为unigram，N=2为bigram，N=3为trigram。简单但有效，是传统语言模型的基础。",
+      "key_points": ["核心假设：当前词只与前面N-1个词有关", "N越大，建模能力越强，但数据越稀疏", "实践中N通常为2-5", "优点：简单直观；缺点：长距离依赖建模能力弱"],
+      "formula": "P(w_t|w_1...w_{t-1}) ≈ P(w_t|w_{t-N+1}...w_{t-1})"
+    },
+    {
+      "id": "language_model", "name": "语言模型", "type": "概念", "lecture": "L3",
+      "description": "计算一个句子出现概率的模型P(W)，用于衡量句子的合理程度。是NLP的核心组件，广泛应用于语音识别、机器翻译、文本生成。",
+      "key_points": ["核心问题：给一个句子打分", "传统方法：N-gram + 平滑", "现代方法：基于神经网络的RNN/Transformer", "评估指标：困惑度(Perplexity)"],
+      "formula": "P(W) = P(w1)·P(w2|w1)·P(w3|w1,w2)·... = ∏P(w_t|w1...w_{t-1})"
+    },
+    {
+      "id": "markov_assumption", "name": "马尔可夫假设", "type": "概念", "lecture": "L3",
+      "description": "当前状态的概率只依赖于前N个状态，而非全部历史。是N-gram模型和HMM的理论基础，大幅简化了概率计算。",
+      "key_points": ["一阶马尔可夫：当前只依赖于上一状态", "高阶马尔可夫：依赖前K个状态", "是一种近似，但实践中非常有效", "是N-gram和HMM的共同理论基础"]
+    },
+    {
+      "id": "mle", "name": "极大似然估计(MLE)", "type": "方法", "lecture": "L3",
+      "description": "通过最大化观测数据的似然来估计概率参数。在N-gram中就是直接计数：P(w_t|w_{t-1}) = count(w_{t-1},w_t) / count(w_{t-1})。",
+      "key_points": ["直观：用频率估计概率", "零概率问题：未出现的词对概率为0", "需要平滑技术解决数据稀疏问题"],
+      "formula": "P(w_t|w_{t-1}) = count(w_{t-1}, w_t) / count(w_{t-1})"
+    },
+    {
+      "id": "smoothing", "name": "平滑(Smoothing)", "type": "方法", "lecture": "L3",
+      "description": "解决N-gram中零概率问题（即训练集未出现的词序列概率为0导致整个句子概率为0），通过将从高频词挪一部分概率给零概率事件，让模型对所有可能的词序列都有合理估计。",
+      "key_points": ["核心目标：避免零概率", "牺牲一点点高频词的概率", "分为四类方法：拉普拉斯、Add-k、回退、插值", "平滑效果直接影响语言模型质量"]
+    },
+    {
+      "id": "laplace_smoothing", "name": "拉普拉斯平滑", "type": "方法", "lecture": "L3",
+      "description": "最简单平滑方法：对所有计数加1。等价于假设所有可能的词序列都至少出现了一次（加1后概率总和仍为1）。",
+      "key_points": ["对所有计数加1", "简单但往往效果不佳", "V较大时，加了太多概率给未出现的词", "是理解更复杂平滑方法的基础"],
+      "formula": "P_laplace(w_t|w_{t-1}) = (count(w_{t-1},w_t)+1) / (count(w_{t-1})+V)"
+    },
+    {
+      "id": "add_k_smoothing", "name": "Add-k平滑", "type": "方法", "lecture": "L3",
+      "description": "对拉普拉斯平滑的改进：对所有计数加k（k<1），而非强制加1。k通常通过验证集调参确定。",
+      "key_points": ["k=1就是拉普拉斯平滑", "k<1：比拉普拉斯更保守", "k需要通过验证集调整", "仍是简单方法，现代系统中不常用"],
+      "formula": "P_addk(w_t|w_{t-1}) = (count(w_{t-1},w_t)+k) / (count(w_{t-1})+kV)"
+    },
+    {
+      "id": "backoff", "name": "回退(Backoff)", "type": "方法", "lecture": "L3",
+      "description": "高阶N-gram计数为零时，回退到低阶N-gram。只在需要时才降级，配合折扣思想使用（如Katz Backoff）。",
+      "key_points": ["逐级回退：3-gram→2-gram→1-gram→0-gram", "配合Good-Turing折扣使用", "相比简单加k，回退更合理：优先使用高阶信息"],
+      "formula": "P_backoff(w_t|w_{t-2},w_{t-1}) = discounted概率（若count=0则回退到P(w_t|w_{t-1})×α）"
+    },
+    {
+      "id": "interpolation", "name": "插值(Interpolation)", "type": "方法", "lecture": "L3",
+      "description": "将不同阶N-gram的概率加权组合。与回退不同，插值总是混合所有阶的信息，而非仅在需要时回退。",
+      "key_points": ["总是结合所有阶的N-gram", "权重通过EM算法在验证集上学习", "通常比回退更稳定", "计算量比简单回退大"],
+      "formula": "P_interp(w_t|h) = λ₁P(w_t)+λ₂P(w_t|w_{t-1})+λ₃P(w_t|w_{t-2},w_{t-1}), Σλ=1"
+    },
+    {
+      "id": "perplexity", "name": "困惑度(Perplexity)", "type": "参数/指标", "lecture": "L3",
+      "description": "衡量语言模型好坏的指标，越小越好。直观理解：模型在每个位置平均需要从多少个词中选择。",
+      "key_points": ["值越小，模型越好", "Perplexity=exp(交叉熵)", "比较不同模型时需在同一测试集上"],
+      "formula": "PPL = exp(-1/N · ΣlogP(w_t|w_1...w_{t-1})) = 2^cross-entropy"
+    },
+    {
+      "id": "text_classification", "name": "文本分类", "type": "应用任务", "lecture": "L4",
+      "description": "将文本分配到一个或多个预定义类别中，是NLP最基础的应用任务之一。应用广泛：垃圾邮件检测、情感分析、新闻分类、意图识别。",
+      "key_points": ["二分类 vs 多分类 vs 多标签分类", "传统方法：朴素贝叶斯 + TF-IDF", "现代方法：基于预训练模型", "关键步骤：特征提取 → 特征选择 → 分类器训练"]
+    },
+    {
+      "id": "naive_bayes", "name": "朴素贝叶斯", "type": "模型", "lecture": "L4",
+      "description": "基于贝叶斯定理，假设特征之间条件独立的分类模型。'朴素'指特征独立性假设在现实中不成立，但实践中效果出人意料地好，特别是文本分类任务。",
+      "key_points": ["核心假设：特征条件独立（词与词之间不相关）", "训练快：只需计数", "对小数据集效果好", "特征独立假设不成立但实用", "常用变体：Multinomial NB（文本分类首选）"],
+      "formula": "P(c|doc) ∝ P(c) · ∏P(word|c)"
+    },
+    {
+      "id": "bayes_theorem", "name": "贝叶斯定理", "type": "概念", "lecture": "L4",
+      "description": "P(A|B) = P(B|A)·P(A) / P(B)，用于在已知条件概率的情况下计算逆概率。是朴素贝叶斯分类器和许多概率模型的理论基础。",
+      "key_points": ["先验概率P(A)：看到数据前对A的信念",
+        "似然P(B|A)：在A成立时观测到B的概率",
+        "后验概率P(A|B)：看到数据后对A的更新信念"],
+      "formula": "P(A|B) = P(B|A)·P(A) / P(B)"
+    },
+    {
+      "id": "feature_selection", "name": "特征选择", "type": "方法", "lecture": "L4",
+      "description": "从原始特征中选出最有信息量的子集，去除冗余和噪声特征。降维同时保持模型性能，减少过拟合风险。",
+      "key_points": ["降维+降噪+加速训练", "常用方法：卡方检验、互信息、TF-IDF过滤", "减少过拟合：更少的特征→更简单的模型"]
+    },
+    {
+      "id": "tfidf", "name": "TF-IDF", "type": "方法", "lecture": "L4",
+      "description": "词频-逆文档频率，衡量一个词对一篇文档的重要性。TF越高表示词在文档中出现多；IDF越高表示词在整体文档中出现少（更有区分度）。",
+      "key_points": ["TF: 词在文档中出现的频率（局部重要性）", "IDF: log(总文档数/含该词的文档数)（全局区分度）", "常用作文本分类和检索的特征", "简单但有效，至今广泛使用"],
+      "formula": "TF-IDF = TF(t,d) × IDF(t) = count(t,d) × log(N/df(t))"
+    },
+    {
+      "id": "logistic_regression", "name": "逻辑回归", "type": "模型", "lecture": "L5",
+      "description": "使用sigmoid函数将线性输出映射到(0,1)概率空间的分类模型。名字虽叫'回归'，实际上是分类模型。训练用梯度下降+交叉熵损失。",
+      "key_points": ["线性模型 + sigmoid激活 → 概率输出", "二分类自然扩展为多分类（Softmax）", "可解释性强：权重直接反映特征重要性", "文本分类的强大baseline，常优于朴素贝叶斯"],
+      "formula": "P(y=1|x) = σ(w·x+b) = 1/(1+e^-(w·x+b))"
+    },
+    {
+      "id": "sigmoid", "name": "Sigmoid函数", "type": "概念", "lecture": "L5",
+      "description": "σ(x)=1/(1+e^(-x))，将任意实数平滑映射到(0,1)区间，呈S型曲线。是逻辑回归的核心激活函数。",
+      "key_points": ["输出范围(0,1)，天然适合概率解释", "平滑可导，便于梯度下降", "两端饱和：|x|很大时梯度趋近于0", "导函数简单：σ'(x)=σ(x)(1-σ(x))"],
+      "formula": "σ(x) = 1/(1+e^(-x))"
+    },
+    {
+      "id": "softmax", "name": "Softmax", "type": "方法", "lecture": "L5",
+      "description": "Sigmoid的多分类推广版本，将K个实数映射为K个总和为1的概率值。是几乎所有多分类模型的输出层标配。",
+      "key_points": ["多分类版Sigmoid", "输出总和为1，可解释为概率分布", "指数函数放大差异：大的更大，小的更小"],
+      "formula": "softmax(z_i) = e^(z_i) / Σe^(z_j)"
+    },
+    {
+      "id": "cross_entropy", "name": "交叉熵损失", "type": "方法", "lecture": "L5",
+      "description": "衡量预测概率分布与真实分布之间差异的损失函数，是分类任务的标准损失。当预测=真实标签时损失最小。",
+      "key_points": ["分类任务的标准损失函数", "配合Softmax/Sigmoid使用", "对错误预测惩罚大（log函数特性）", "等价于最大化正确类别的对数似然"],
+      "formula": "L = -Σ y_true · log(y_pred)，二分类: L = -[y·log(p)+(1-y)·log(1-p)]"
+    },
+    {
+      "id": "gradient_descent", "name": "梯度下降", "type": "算法", "lecture": "L5",
+      "description": "沿损失函数梯度方向迭代更新参数使损失最小化。每次迭代：参数 = 参数 - 学习率 × 梯度。是机器学习最核心的优化算法。",
+      "key_points": ["负梯度方向是损失下降最快的方向", "学习率控制每步更新幅度（关键超参数）", "三种变体：批量/随机/小批量梯度下降", "需注意局部最优和鞍点问题"],
+      "formula": "θ_{t+1} = θ_t - η · ∇L(θ_t)"
+    },
+    {
+      "id": "sgd", "name": "随机梯度下降(SGD)", "type": "算法", "lecture": "L5",
+      "description": "每次随机选一个（或一小批）样本计算梯度更新参数。比批量梯度下降快得多，且噪声有时能帮助跳出局部最优。",
+      "key_points": ["每次随机一个样本 → 梯度有噪声", "收敛比批量快（每样本都可以更新）", "噪声有正则化效果", "学习率调度很重要：通常逐渐衰减"],
+      "formula": "θ_{t+1} = θ_t - η · ∇L(θ_t; x_i, y_i)"
+    },
+    {
+      "id": "overfitting", "name": "过拟合", "type": "概念", "lecture": "L5",
+      "description": "模型在训练集上表现很好但在测试集上表现差，学到了训练数据中的噪声而非真正规律。是机器学习中需要持续警惕的核心问题。",
+      "key_points": ["症状：训练误差低、验证误差高", "原因：模型太复杂 / 数据太少 / 训练太久", "解决方法：正则化、早停、更多数据、Dropout", "与欠拟合相对（训练误差也高）"]
+    },
+    {
+      "id": "regularization", "name": "正则化", "type": "方法", "lecture": "L5",
+      "description": "限制模型复杂度以防止过拟合的技术。L1正则化（Lasso）使部分权重为0实现特征选择；L2正则化（Ridge）使权重变小但不为0。",
+      "key_points": ["L1正则化：λΣ|w|，产生稀疏解（特征选择）", "L2正则化：λΣw²，使权重平滑变小", "λ控制正则化强度（越大→模型越简单）", "本质：在损失函数中加入模型复杂度惩罚项"],
+      "formula": "L_total = L_original + λR(w)，L1: R(w)=Σ|w_i|，L2: R(w)=Σw_i²"
+    },
+    {
+      "id": "word_embedding", "name": "词嵌入", "type": "概念", "lecture": "L6",
+      "description": "将词语映射到低维稠密向量空间（通常50-300维），使语义相近的词向量空间距离也相近。解决了One-hot编码维度过高且无语义相似性的问题。",
+      "key_points": ["稠密低维：50-300维 vs One-hot的几万维", "语义编码：相似词的向量相近", "可用于词向量运算：king-man+woman≈queen", "是深度学习NLP的基石技术"]
+    },
+    {
+      "id": "distributed_representation", "name": "分布式表示", "type": "概念", "lecture": "L6",
+      "description": "用稠密低维向量表示词义，每个维度无明确含义但所有维度组合起来编码语义。与One-hot的局部表示相对。",
+      "key_points": ["每个维度不独立对应某个含义", "语义由所有维度的模式共同编码", "维度通常50-300", "可产生类比推理：向量间的线性运算对应语义操作"]
+    },
+    {
+      "id": "distributional_hypothesis", "name": "分布式假设", "type": "概念", "lecture": "L6",
+      "description": "\"You shall know a word by the company it keeps\" (Firth, 1957)——词义由其上下文决定。这是所有词嵌入方法的理论基础。",
+      "key_points": ["相同上下文的词 → 语义相似",
+        "是Word2Vec、GloVe等所有分布语义模型的根基",
+        "分布相似的词不一定同义（如反义词good/bad也有相似上下文）"],
+      "formula": "语义相似度 ≈ 上下文分布相似度"
+    },
+    {
+      "id": "one_hot", "name": "One-hot编码", "type": "方法", "lecture": "L6",
+      "description": "将词表示为高维稀疏向量（维度=词汇表大小），只有一个位置为1其余为0。简单但有两个致命问题：维度灾难和语义缺失（任意两个词的向量距离相同）。",
+      "key_points": ["维度 = 词汇表大小（通常几万到几十万）——维度灾难", "所有词向量正交（cos相似度=0）——无语义信息", "存储和计算效率极低", "是词嵌入要解决的核心痛点"]
+    },
+    {
+      "id": "cooccurrence_matrix", "name": "共现矩阵", "type": "方法", "lecture": "L6",
+      "description": "统计词对在上下文窗口中共同出现的次数，构建|V|×|V|矩阵。是分布式语义的一种具体实现，但矩阵巨大且稀疏。",
+      "key_points": ["记录词与词在固定窗口内的共现频率", "矩阵稠密化：用PMI、PPMI等加权", "降维得到稠密向量：SVD", "缺点：矩阵太大（V×V）、新词无法处理"],
+      "formula": "Co-occur(i,j) = 词i和词j在同一窗口内出现的次数"
+    },
+    {
+      "id": "pmi", "name": "点互信息(PMI)", "type": "方法", "lecture": "L6",
+      "description": "衡量两个词之间关联强度的指标，基于共现频率与独立出现的比率。正PMI(PPMI)只保留正关联值，在实践中效果更好。",
+      "key_points": ["PMI>0：两个词倾向于共同出现", "PMI=0：两个词独立", "PPMI = max(PMI, 0)：只保留正关联", "对低频词对不稳定"],
+      "formula": "PMI(x,y) = log(P(x,y)/(P(x)·P(y)))"
+    },
+    {
+      "id": "svd", "name": "SVD降维", "type": "方法", "lecture": "L6",
+      "description": "奇异值分解，将高维共现矩阵分解为三个矩阵的乘积，取前k个奇异值即可得到低维稠密的词向量。计算量O(V³)，适合小词表。",
+      "key_points": ["降维：V×V矩阵 → V×k稠密向量", "k通常取50-300", "计算复杂度O(V³)，词汇量大时不可行", "Word2Vec出现前的主流方法"]
+    },
+    {
+      "id": "word2vec", "name": "Word2Vec", "type": "模型", "lecture": "L7",
+      "description": "2013年Mikolov提出的经典词向量学习模型。基于分布式假设，通过浅层神经网络训练得到低维稠密词向量。核心创新：用预测任务（而非计数）学习词向量，训练高效、向量质量好。",
+      "key_points": ["两种架构：CBOW（上下文→中心词）和Skip-gram（中心词→上下文）", "训练技巧：负采样 或 层次Softmax 替代全词表Softmax", "向量可做类比推理：king-man+woman≈queen", "开源工具：gensim、原版C代码"],
+      "formula": "CBOW: max ΣlogP(w_t|context(w_t))，Skip-gram: max ΣlogP(context(w_t)|w_t)"
+    },
+    {
+      "id": "cbow", "name": "CBOW", "type": "模型", "lecture": "L7",
+      "description": "Continuous Bag of Words，用上下文词的平均向量预测中心词。训练速度快（一次预测周围所有词），适合大数据集。",
+      "key_points": ["输入：上下文的平均词向量", "输出：中心词的概率分布", "训练比Skip-gram快（一次预测多个上下文词）", "对频繁词效果好", "将上下文视为'词袋'——忽略词序"],
+      "formula": "P(w_t|context) = softmax(U · avg(v_{t-c}...v_{t+c}))"
+    },
+    {
+      "id": "skipgram", "name": "Skip-gram", "type": "模型", "lecture": "L7",
+      "description": "用中心词预测上下文词。每次预测一个上下文位置。对低频词效果好于CBOW，小语料下也能学到好向量，但训练更慢。",
+      "key_points": ["输入：中心词的向量", "输出：每个上下文位置的词概率分布", "对低频词效果优于CBOW", "小数据集表现好", "训练比CBOW慢（每个中心词预测多个上下文）"],
+      "formula": "P(w_{t+j}|w_t) = softmax(v'_w_t · v_{w_{t+j}})"
+    },
+    {
+      "id": "negative_sampling", "name": "负采样", "type": "方法", "lecture": "L7",
+      "description": "训练时随机采样K个负例（非上下文词）替代全词表Softmax，将多分类问题转为二分类问题（区分正例和负例）。大幅加速训练，是Word2Vec能在大规模语料上训练的关键。",
+      "key_points": ["将V分类→K+1个二分类（K通常5-20）",
+        "负样本采样概率 ∝ 词频^0.75（平衡高频和低频词）",
+        "速度提升巨大：O(V)→O(K)",
+        "实践中比层次Softmax更常用"],
+      "formula": "L = -logσ(v_w·v_c) - Σ_{neg}logσ(-v_w·v_n)"
+    },
+    {
+      "id": "hierarchical_softmax", "name": "层次Softmax", "type": "方法", "lecture": "L7",
+      "description": "用霍夫曼树结构组织词表，每个词对应一条从根到叶的路径，Softmax计算复杂度从O(V)降到O(logV)。高频词路径短（训练更快）。",
+      "key_points": ["霍夫曼树：高频词靠近根节点",
+        "复杂度: O(V)→O(logV)",
+        "每个节点做一次二分类",
+        "低频词路径长，训练较慢"],
+      "formula": "P(w|context) = ∏σ(±v_node·v_context) 沿霍夫曼路径"
+    },
+    {
+      "id": "context_window", "name": "上下文窗口", "type": "概念", "lecture": "L7",
+      "description": "定义中心词的上下文范围大小。窗口=2表示取中心词前后各2个词作为上下文。窗口越大，捕获更多主题信息；窗口越小，捕获更多句法信息。",
+      "key_points": ["窗口大 → 主题相似性（如'手机'和'充电器'）", "窗口小 → 句法/功能相似性（如'手机'和'电脑'）", "Word2Vec推荐窗口=5（Skip-gram）或2（CBOW）"]
+    },
+    {
+      "id": "sequence_model", "name": "序列模型", "type": "概念", "lecture": "L8",
+      "description": "用于处理序列数据（文本、语音、时间序列）的模型，能捕捉元素之间的时序依赖关系。包括HMM、CRF等传统模型和RNN/LSTM等神经网络模型。",
+      "key_points": ["核心：建模P(y1...yT|x1...xT)", "传统：HMM（生成式）、CRF（判别式）", "现代：RNN/LSTM/Transformer", "应用：序列标注、机器翻译、语音识别"]
+    },
+    {
+      "id": "hmm", "name": "隐马尔可夫模型(HMM)", "type": "模型", "lecture": "L8",
+      "description": "生成式概率图模型，包含隐状态序列（如词性标签）和观测序列（如词语）。通过转移概率和发射概率建模文本生成过程。",
+      "key_points": ["两个概率矩阵：转移概率（状态间）+ 发射概率（状态→观测）", "三个基本问题：计算概率（前向算法）、解码（Viterbi）、学习（Baum-Welch）", "生成式模型：建模P(X,Y)", "常用于POS tagging、语音识别中的音素→词"],
+      "formula": "P(X,Y) = P(y1)·ΠP(y_t|y_{t-1})·ΠP(x_t|y_t)"
+    },
+    {
+      "id": "viterbi", "name": "Viterbi算法", "type": "算法", "lecture": "L8",
+      "description": "动态规划算法，在HMM中找到给定观测序列下最可能的隐状态序列（解码问题）。时间复杂度O(T·S²)，是HMM应用中最重要的算法。",
+      "key_points": ["动态规划：存储每个时刻每个状态的最优路径", "复合度: O(T·S²)，可精确求解", "本质是求解max路径（而非sum，类似前向算法但取max）", "可视为beam search的特例（beam=∞）"],
+      "formula": "v_t(j)=max_i[v_{t-1}(i)·P(j|i)·P(x_t|j)]"
+    },
+    {
+      "id": "forward_algorithm", "name": "前向算法", "type": "算法", "lecture": "L8",
+      "description": "动态规划算法，计算HMM中给定模型参数下观测序列的总概率P(X)。与Viterbi的区别：前向求和（sum），Viterbi求最大（max）。",
+      "key_points": ["计算P(X)：对所有可能状态序列的概率求和", "避免枚举S^T条路径（指数级）→O(T·S²)", "与Viterbi的区别：求和 vs 取最大值", "命名原因：从开始往后递推（还有后向算法）"],
+      "formula": "α_t(j) = [Σα_{t-1}(i)·P(j|i)]·P(x_t|j)"
+    },
+    {
+      "id": "crf", "name": "条件随机场(CRF)", "type": "模型", "lecture": "L8",
+      "description": "在给定观测序列下直接对隐状态序列建模的判别式模型。与HMM（生成式）不同，CRF建模P(Y|X)而非P(X,Y)，可以灵活引入任意特征。",
+      "key_points": ["判别式 vs HMM生成式：直接建模P(Y|X)而非P(X,Y)", "可引入丰富特征（上下文词、前缀后缀、是否大写等）", "标签偏置比HMM更合理", "训练慢于HMM", "序列标注的经典方法（常配合BiLSTM使用）"],
+      "formula": "P(Y|X) = (1/Z(X))·exp(Σλ_k·f_k(y_t,y_{t-1},X,t))"
+    },
+    {
+      "id": "sequence_labeling", "name": "序列标注", "type": "应用任务", "lecture": "L8",
+      "description": "为输入序列的每个元素分配一个标签。NLP中的核心任务类型，POS Tagging、NER、分词（中文）都属于序列标注。",
+      "key_points": ["输入：token序列；输出：每个token一个标签", "标签之间有依赖关系（如BIO标注方案）", "经典模型：HMM、CRF", "现代方法：BiLSTM-CRF"]
+    },
+    {
+      "id": "pos_tagging", "name": "词性标注(POS Tagging)", "type": "应用任务", "lecture": "L8",
+      "description": "为文本中每个词标注词性（名词、动词、形容词、副词等）。是很多NLP pipeline的基础步骤，为后续句法分析、NER等提供特征。",
+      "key_points": ["标签集：Penn Treebank (45个标签)", "常见标签：NN(名词)、VB(动词)、JJ(形容词)", "歧义消解是难点：同一个词在不同上下文可能有不同词性", "准确率可达97%+（英文，有监督学习）"]
+    },
+    {
+      "id": "ner", "name": "命名实体识别(NER)", "type": "应用任务", "lecture": "L8",
+      "description": "识别文本中的命名实体（人名、地名、机构名、日期、金额等）并分类。是信息抽取的核心任务。",
+      "key_points": ["典型实体类型：PERSON、LOC、ORG、DATE、MONEY", "BIO/BIOES标注方案", "难点：实体边界识别+实体类型分类", "应用：知识图谱构建、信息检索、问答系统"]
+    },
+    {
+      "id": "cosine_similarity", "name": "余弦相似度", "type": "参数/指标", "lecture": "L6",
+      "description": "衡量两个向量方向相似程度的指标（忽略长度差异），值域[-1,1]。是词向量和文本向量比较的标准度量。",
+      "key_points": ["只关心方向不关心长度（归一化后等价于点积）", "1=完全相同方向，0=正交，-1=完全相反", "广泛用于语义相似度计算、信息检索", "常配合词向量和TF-IDF使用"],
+      "formula": "cos_sim(u,v) = u·v/(||u||·||v||)"
+    },
+    {
+      "id": "beam_search", "name": "Beam Search", "type": "算法", "lecture": "L8",
+      "description": "在每一步保留top-k个最优候选（beam_size=k），平衡搜索效率与结果质量。是贪心搜索和穷举搜索的折中方案。",
+      "key_points": ["beam_size=1 → 贪心搜索；beam_size=∞ → 穷举", "每一步保留k个最优部分序列", "k越大，结果越好但越慢", "广泛应用于：机器翻译解码、语音识别、Viterbi变体"],
+      "formula": "每步: score(partial_seq) = ΣlogP(token|context)，保留score最高的k个"
+    },
+
+    {
+      "id": "precision_recall", "name": "精确率/召回率/F1", "type": "参数/指标", "lecture": "L4",
+      "description": "分类和信息检索的核心评价指标。精确率=预测为正的样本中真正为正的比例；召回率=所有正样本中被正确预测的比例；F1是两者的调和平均。",
+      "key_points": ["精确率高→少误报（追求质量）", "召回率高→少漏报（追求覆盖）", "F1平衡两者：F1=2PR/(P+R)", "文本分类、NER等任务的标准评价"],
+      "formula": "Precision=TP/(TP+FP), Recall=TP/(TP+FN), F1=2PR/(P+R)"
+    }
+  ],
+
+  "triples": [
+    {"head": "自然语言处理", "relation": "包含", "tail": "文本预处理"},
+    {"head": "自然语言处理", "relation": "包含", "tail": "语言模型"},
+    {"head": "自然语言处理", "relation": "包含", "tail": "文本分类"},
+    {"head": "自然语言处理", "relation": "包含", "tail": "词嵌入"},
+    {"head": "自然语言处理", "relation": "包含", "tail": "序列模型"},
+
+    {"head": "文本预处理", "relation": "包含", "tail": "分词/Tokenization"},
+    {"head": "文本预处理", "relation": "包含", "tail": "正则表达式"},
+    {"head": "文本预处理", "relation": "包含", "tail": "文本归一化"},
+    {"head": "文本预处理", "relation": "包含", "tail": "停用词"},
+    {"head": "文本预处理", "relation": "相关概念", "tail": "编辑距离"},
+    {"head": "文本归一化", "relation": "包含", "tail": "词干提取"},
+    {"head": "文本归一化", "relation": "包含", "tail": "词形还原"},
+    {"head": "词干提取", "relation": "容易混淆", "tail": "词形还原"},
+    {"head": "编辑距离", "relation": "相关概念", "tail": "余弦相似度"},
+
+    {"head": "语言模型", "relation": "包含", "tail": "N-gram"},
+    {"head": "语言模型", "relation": "先修知识", "tail": "极大似然估计(MLE)"},
+    {"head": "语言模型", "relation": "相关概念", "tail": "平滑(Smoothing)"},
+    {"head": "语言模型", "relation": "相关概念", "tail": "困惑度(Perplexity)"},
+    {"head": "语言模型", "relation": "容易混淆", "tail": "N-gram"},
+    {"head": "N-gram", "relation": "先修知识", "tail": "马尔可夫假设"},
+    {"head": "N-gram", "relation": "先修知识", "tail": "文本预处理"},
+    {"head": "N-gram", "relation": "相关概念", "tail": "极大似然估计(MLE)"},
+    {"head": "平滑(Smoothing)", "relation": "包含", "tail": "拉普拉斯平滑"},
+    {"head": "平滑(Smoothing)", "relation": "包含", "tail": "Add-k平滑"},
+    {"head": "平滑(Smoothing)", "relation": "包含", "tail": "回退(Backoff)"},
+    {"head": "平滑(Smoothing)", "relation": "包含", "tail": "插值(Interpolation)"},
+    {"head": "拉普拉斯平滑", "relation": "容易混淆", "tail": "Add-k平滑"},
+    {"head": "回退(Backoff)", "relation": "容易混淆", "tail": "插值(Interpolation)"},
+
+    {"head": "文本分类", "relation": "先修知识", "tail": "文本预处理"},
+    {"head": "文本分类", "relation": "包含", "tail": "朴素贝叶斯"},
+    {"head": "文本分类", "relation": "包含", "tail": "逻辑回归"},
+    {"head": "文本分类", "relation": "相关概念", "tail": "特征选择"},
+    {"head": "文本分类", "relation": "相关概念", "tail": "精确率/召回率/F1"},
+    {"head": "朴素贝叶斯", "relation": "先修知识", "tail": "贝叶斯定理"},
+    {"head": "朴素贝叶斯", "relation": "相关概念", "tail": "特征选择"},
+    {"head": "朴素贝叶斯", "relation": "容易混淆", "tail": "逻辑回归"},
+    {"head": "特征选择", "relation": "包含", "tail": "TF-IDF"},
+    {"head": "TF-IDF", "relation": "相关概念", "tail": "余弦相似度"},
+    {"head": "TF-IDF", "relation": "相关概念", "tail": "One-hot编码"},
+
+    {"head": "逻辑回归", "relation": "先修知识", "tail": "Sigmoid函数"},
+    {"head": "逻辑回归", "relation": "先修知识", "tail": "梯度下降"},
+    {"head": "逻辑回归", "relation": "相关概念", "tail": "交叉熵损失"},
+    {"head": "逻辑回归", "relation": "相关概念", "tail": "Softmax"},
+    {"head": "逻辑回归", "relation": "相关概念", "tail": "过拟合"},
+    {"head": "逻辑回归", "relation": "相关概念", "tail": "正则化"},
+    {"head": "过拟合", "relation": "相关概念", "tail": "正则化"},
+    {"head": "Sigmoid函数", "relation": "容易混淆", "tail": "Softmax"},
+    {"head": "梯度下降", "relation": "包含", "tail": "随机梯度下降(SGD)"},
+    {"head": "梯度下降", "relation": "容易混淆", "tail": "随机梯度下降(SGD)"},
+
+    {"head": "词嵌入", "relation": "先修知识", "tail": "分布式假设"},
+    {"head": "词嵌入", "relation": "先修知识", "tail": "TF-IDF"},
+    {"head": "词嵌入", "relation": "相关概念", "tail": "分布式表示"},
+    {"head": "词嵌入", "relation": "相关概念", "tail": "共现矩阵"},
+    {"head": "词嵌入", "relation": "相关概念", "tail": "余弦相似度"},
+    {"head": "分布式表示", "relation": "相关概念", "tail": "One-hot编码"},
+    {"head": "分布式表示", "relation": "容易混淆", "tail": "One-hot编码"},
+    {"head": "共现矩阵", "relation": "相关概念", "tail": "SVD降维"},
+    {"head": "共现矩阵", "relation": "相关概念", "tail": "点互信息(PMI)"},
+
+    {"head": "Word2Vec", "relation": "先修知识", "tail": "词嵌入"},
+    {"head": "Word2Vec", "relation": "先修知识", "tail": "分布式表示"},
+    {"head": "Word2Vec", "relation": "先修知识", "tail": "梯度下降"},
+    {"head": "Word2Vec", "relation": "先修知识", "tail": "极大似然估计(MLE)"},
+    {"head": "Word2Vec", "relation": "包含", "tail": "CBOW"},
+    {"head": "Word2Vec", "relation": "包含", "tail": "Skip-gram"},
+    {"head": "Word2Vec", "relation": "相关概念", "tail": "上下文窗口"},
+    {"head": "Word2Vec", "relation": "相关概念", "tail": "负采样"},
+    {"head": "Word2Vec", "relation": "相关概念", "tail": "层次Softmax"},
+    {"head": "CBOW", "relation": "相关概念", "tail": "Skip-gram"},
+    {"head": "CBOW", "relation": "容易混淆", "tail": "Skip-gram"},
+    {"head": "负采样", "relation": "相关概念", "tail": "层次Softmax"},
+    {"head": "负采样", "relation": "容易混淆", "tail": "层次Softmax"},
+    {"head": "负采样", "relation": "相关概念", "tail": "Softmax"},
+
+    {"head": "序列模型", "relation": "先修知识", "tail": "语言模型"},
+    {"head": "序列模型", "relation": "包含", "tail": "隐马尔可夫模型(HMM)"},
+    {"head": "序列模型", "relation": "包含", "tail": "条件随机场(CRF)"},
+    {"head": "序列模型", "relation": "应用场景", "tail": "序列标注"},
+    {"head": "隐马尔可夫模型(HMM)", "relation": "先修知识", "tail": "马尔可夫假设"},
+    {"head": "隐马尔可夫模型(HMM)", "relation": "相关概念", "tail": "Viterbi算法"},
+    {"head": "隐马尔可夫模型(HMM)", "relation": "相关概念", "tail": "前向算法"},
+    {"head": "隐马尔可夫模型(HMM)", "relation": "容易混淆", "tail": "条件随机场(CRF)"},
+    {"head": "条件随机场(CRF)", "relation": "相关概念", "tail": "隐马尔可夫模型(HMM)"},
+    {"head": "条件随机场(CRF)", "relation": "应用场景", "tail": "命名实体识别(NER)"},
+    {"head": "Viterbi算法", "relation": "容易混淆", "tail": "前向算法"},
+    {"head": "Viterbi算法", "relation": "相关概念", "tail": "Beam Search"},
+    {"head": "Viterbi算法", "relation": "应用场景", "tail": "词性标注(POS Tagging)"},
+    {"head": "序列标注", "relation": "包含", "tail": "词性标注(POS Tagging)"},
+    {"head": "序列标注", "relation": "包含", "tail": "命名实体识别(NER)"},
+    {"head": "序列标注", "relation": "相关概念", "tail": "精确率/召回率/F1"},
+    {"head": "词性标注(POS Tagging)", "relation": "容易混淆", "tail": "命名实体识别(NER)"}
+  ]
+}

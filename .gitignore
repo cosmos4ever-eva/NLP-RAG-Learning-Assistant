@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Course materials (local only, for knowledge graph construction)
+course_materials/
+
+# Vector search index (auto-generated, no need to commit)
+backend/vector_search/index/
