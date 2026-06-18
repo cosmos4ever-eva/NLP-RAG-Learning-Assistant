@@ -23,7 +23,7 @@ scikit-learn==1.5.2
 openai==1.57.4
 
 # Data & Storage
-sqlite3  # built-in
+# sqlite3  # built-in
 datasets==3.1.0
 
 # Frontend

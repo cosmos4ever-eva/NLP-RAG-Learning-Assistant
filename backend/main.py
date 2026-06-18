@@ -30,9 +30,13 @@ async def health():
 from parsing import router as parsing_router
 from knowledge_graph import router as kg_router
 from vector_search import router as vs_router
+from graph_rag import router as rag_router
+from quiz_gen import router as quiz_router
 app.include_router(parsing_router, prefix="/api/parsing", tags=["课程资料解析"])
 app.include_router(kg_router, prefix="/api/kg", tags=["知识图谱"])
 app.include_router(vs_router, prefix="/api/search", tags=["向量检索"])
+app.include_router(rag_router, prefix="/api/rag", tags=["Graph-RAG 问答"])
+app.include_router(quiz_router, prefix="/api/quiz", tags=["自动出题"])
 
 # 后续模块（逐步打开）
 # from vector_search import router as vs_router

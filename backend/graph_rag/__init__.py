@@ -1,13 +1,31 @@
 """
-Graph-RAG 问答模块 - TA 的模块
-负责: 识别用户问题中的知识点 → 同时查图谱+向量库 → 拼 prompt → 调 LLM → 返回答案+来源+关系
+Graph-RAG API routes.
 """
 from fastapi import APIRouter
+
+from shared.schemas import RAGRequest, RAGResponse, TripleItem
+
+from .pipeline import answer_question
 
 router = APIRouter()
 
 
-@router.post("/ask")
-async def ask():
-    """RAG 问答：输入问题，返回答案、来源片段、相关知识子图"""
-    raise NotImplementedError("待实现")
+@router.post("/ask", response_model=RAGResponse)
+async def ask(req: RAGRequest):
+    """Answer a question with retrieved course chunks and KG triples."""
+    result = answer_question(req.question, top_k=3, depth=1)
+
+    return RAGResponse(
+        question=result["question"],
+        answer=result["answer"],
+        sources=result["sources"],
+        related_triples=[
+            TripleItem(
+                head=triple["head"],
+                relation=triple["relation"],
+                tail=triple["tail"],
+            )
+            for triple in result["related_triples"]
+        ],
+        intent="qa",
+    )
