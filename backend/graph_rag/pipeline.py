@@ -107,8 +107,40 @@ def build_prompt(question: str, search_results, kg_triples: list[dict]) -> str:
 3. 使用适合学生理解的语言，解释清楚概念。
 4. 回答要有条理，可以分点说明。
 5. 如果涉及多个概念，请说明它们之间的关系。
-6. 最后给出一个简短的学习建议。
+6. 每个主要结论后都要标注依据。
+7. 课程资料依据格式为：[课程资料: chunk_id]。
+8. 知识图谱依据格式为：[知识图谱: 头实体-关系-尾实体]。
+9. 如果某个判断没有依据，请不要写成确定结论。
+10. 最后给出一个简短的学习建议。
 """.strip()
+
+
+def evaluate_evidence(search_results, kg_triples: list[dict]) -> dict:
+    """Score how well the answer is grounded by retrieved evidence."""
+    source_count = len(search_results)
+    triple_count = len(kg_triples)
+
+    source_score = min(source_count / 3, 1.0) * 0.55
+    graph_score = min(triple_count / 5, 1.0) * 0.45
+    score = round(source_score + graph_score, 2)
+
+    if score >= 0.75:
+        level = "high"
+    elif score >= 0.4:
+        level = "medium"
+    else:
+        level = "low"
+
+    summary = (
+        f"检索到 {source_count} 个课程资料片段，"
+        f"{triple_count} 条知识图谱关系，证据充分性为 {level}。"
+    )
+
+    return {
+        "evidence_score": score,
+        "evidence_level": level,
+        "evidence_summary": summary,
+    }
 
 
 def call_ecnu_gpt(prompt: str) -> str:
@@ -158,6 +190,7 @@ def call_ecnu_gpt(prompt: str) -> str:
 def answer_question(question: str, top_k: int = 3, depth: int = 1) -> dict:
     search_results = get_course_context(question, top_k=top_k)
     kg_triples = get_kg_triples(question, depth=depth)
+    evidence = evaluate_evidence(search_results, kg_triples)
     prompt = build_prompt(question, search_results, kg_triples)
     answer = call_ecnu_gpt(prompt)
 
@@ -167,4 +200,5 @@ def answer_question(question: str, top_k: int = 3, depth: int = 1) -> dict:
         "sources": [result.chunk.chunk_id for result in search_results],
         "related_triples": kg_triples,
         "prompt": prompt,
+        **evidence,
     }

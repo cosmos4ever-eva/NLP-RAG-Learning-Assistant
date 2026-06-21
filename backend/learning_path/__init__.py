@@ -1,13 +1,77 @@
 """
-学习路径推荐模块 - TA 的模块
-负责: 根据图谱找先修和后续知识 → 最短路径 → 输出学习路径图
+Learning path recommendation module.
 """
 from fastapi import APIRouter
+from pydantic import BaseModel
+
+from knowledge_graph.graph import get_kg
+from shared.schemas import TripleItem
 
 router = APIRouter()
 
 
-@router.post("/path")
-async def get_learning_path():
-    """输入目标知识点 → 返回先修、当前、后续 + 路径图"""
-    raise NotImplementedError("待实现")
+class LearningPathRequest(BaseModel):
+    target_entity: str
+
+
+class LearningPathResponse(BaseModel):
+    target: str
+    path: list[str]
+    edges: list[TripleItem]
+    follow_ups: list[str]
+
+
+def _build_prerequisite_path(entity: str, visited: set[str] | None = None) -> list[str]:
+    if visited is None:
+        visited = set()
+
+    if entity in visited:
+        return []
+
+    visited.add(entity)
+    kg = get_kg()
+    path = []
+
+    for prereq in kg.get_prerequisites(entity):
+        path.extend(_build_prerequisite_path(prereq, visited))
+        if prereq not in path:
+            path.append(prereq)
+
+    if entity not in path:
+        path.append(entity)
+
+    return path
+
+
+def _path_edges(path: list[str]) -> list[TripleItem]:
+    kg = get_kg()
+    edges = []
+
+    for i in range(len(path) - 1):
+        source = path[i + 1]
+        target = path[i]
+        relation = "先修知识"
+
+        if kg.graph.has_edge(source, target):
+            relation = kg.graph.edges[source, target].get("relation", relation)
+        elif kg.graph.has_edge(target, source):
+            relation = kg.graph.edges[target, source].get("relation", relation)
+            source, target = target, source
+
+        edges.append(TripleItem(head=source, relation=relation, tail=target))
+
+    return edges
+
+
+@router.post("/path", response_model=LearningPathResponse)
+async def get_learning_path(req: LearningPathRequest):
+    """Return prerequisite-based learning path for a target concept."""
+    kg = get_kg()
+    path = _build_prerequisite_path(req.target_entity)
+
+    return LearningPathResponse(
+        target=req.target_entity,
+        path=path,
+        edges=_path_edges(path),
+        follow_ups=kg.get_follow_ups(req.target_entity),
+    )

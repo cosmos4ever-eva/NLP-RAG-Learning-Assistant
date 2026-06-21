@@ -40,6 +40,44 @@ class RecommendResponse(BaseModel):
     related_triples: list[dict]
 
 
+class QuizEvaluationRequest(BaseModel):
+    concept: str
+    question: str
+    answer: str
+    explanation: str = ""
+    difficulty: str = "medium"
+
+
+class QuizEvaluationResponse(BaseModel):
+    concept: str
+    overall_score: float
+    clarity_score: float
+    correctness_score: float
+    difficulty_match_score: float
+    evidence_score: float
+    problems: list[str]
+    suggestions: list[str]
+
+
+class QuizSubmitRequest(BaseModel):
+    concept: str
+    question: str
+    student_answer: str
+    reference_answer: str
+    explanation: str = ""
+
+
+class QuizSubmitResponse(BaseModel):
+    concept: str
+    score: float
+    is_correct: bool
+    feedback: str
+    wrong_concepts: list[str]
+    suggested_review: list[str]
+    source_chunk_ids: list[str]
+    related_triples: list[dict]
+
+
 def _search_course_chunks(query: str, top_k: int = 5):
     retriever = get_retriever()
     try:
@@ -136,6 +174,14 @@ def _build_quiz_prompt(req: QuizRequest, search_results, triples: list[dict]) ->
 题型范围：
 {question_types}
 
+难度要求：
+{req.difficulty}
+
+难度说明：
+easy：考查基本定义、概念识别和简单事实。
+medium：考查概念关系、方法区别和原理理解。
+hard：考查应用场景、推理分析、综合比较和易混点辨析。
+
 课程资料：
 {chunk_context}
 
@@ -165,6 +211,7 @@ JSON 格式如下：
 4. short_answer 题 options 设为 null。
 5. explanation 要说明为什么答案正确。
 6. source_chunk_ids 必须来自上方课程资料的来源 id；如果没有资料来源，使用空列表。
+7. 请严格按照指定难度生成题目，不要明显过难或过易。
 """.strip()
 
 
@@ -205,6 +252,103 @@ JSON 格式如下：
 1. 推荐问题要适合学生循序渐进学习。
 2. 覆盖定义、对比、原理、应用、易混点等不同角度。
 3. 不要推荐脱离课程资料和知识图谱的问题。
+""".strip()
+
+
+def _build_evaluation_prompt(req: QuizEvaluationRequest, search_results, triples: list[dict]) -> str:
+    chunk_context = _format_chunks(search_results)
+    kg_context = _format_triples(triples)
+
+    return f"""
+你是一个 NLP 课程助教。请根据课程资料和知识图谱，对一道自动生成的题目做质量自检。
+
+知识点：
+{req.concept}
+
+目标难度：
+{req.difficulty}
+
+题目：
+{req.question}
+
+参考答案：
+{req.answer}
+
+解析：
+{req.explanation}
+
+课程资料：
+{chunk_context}
+
+知识图谱关系：
+{kg_context}
+
+请严格返回 JSON，不要输出 Markdown，不要输出解释性前后缀。
+JSON 格式如下：
+{{
+  "overall_score": 0.0,
+  "clarity_score": 0.0,
+  "correctness_score": 0.0,
+  "difficulty_match_score": 0.0,
+  "evidence_score": 0.0,
+  "problems": ["问题1"],
+  "suggestions": ["修改建议1"]
+}}
+
+评分说明：
+1. 所有分数范围为 0 到 1。
+2. clarity_score 评价题干是否清楚。
+3. correctness_score 评价答案和解析是否正确。
+4. difficulty_match_score 评价题目是否符合目标难度。
+5. evidence_score 评价题目是否有课程资料或知识图谱依据。
+6. problems 和 suggestions 如果没有内容，返回空列表。
+""".strip()
+
+
+def _build_submit_prompt(req: QuizSubmitRequest, search_results, triples: list[dict]) -> str:
+    chunk_context = _format_chunks(search_results)
+    kg_context = _format_triples(triples)
+
+    return f"""
+你是一个 NLP 课程助教。请根据参考答案、解析、课程资料和知识图谱，对学生作答进行语义判分。
+
+知识点：
+{req.concept}
+
+题目：
+{req.question}
+
+学生答案：
+{req.student_answer}
+
+参考答案：
+{req.reference_answer}
+
+参考解析：
+{req.explanation}
+
+课程资料：
+{chunk_context}
+
+知识图谱关系：
+{kg_context}
+
+请严格返回 JSON，不要输出 Markdown，不要输出解释性前后缀。
+JSON 格式如下：
+{{
+  "score": 0.0,
+  "is_correct": false,
+  "feedback": "给学生的具体反馈",
+  "wrong_concepts": ["没有掌握或混淆的概念"],
+  "suggested_review": ["建议复习的知识点"]
+}}
+
+评分要求：
+1. score 范围为 0 到 1。
+2. 如果学生答案表达不同但语义正确，应给较高分。
+3. 如果答案只说到表面但缺少关键点，应给中等分并指出缺失。
+4. feedback 要具体说明正确点、缺失点和改进建议。
+5. wrong_concepts 和 suggested_review 应优先来自知识图谱关系或题目相关概念。
 """.strip()
 
 
@@ -258,6 +402,58 @@ async def recommend_questions(req: RecommendRequest):
     return RecommendResponse(
         concept=req.concept,
         questions=questions,
+        source_chunk_ids=[result.chunk.chunk_id for result in search_results],
+        related_triples=triples,
+    )
+
+
+@router.post("/evaluate", response_model=QuizEvaluationResponse)
+async def evaluate_quiz(req: QuizEvaluationRequest):
+    """Evaluate generated quiz quality with course and KG evidence."""
+    search_results = _search_course_chunks(req.concept, top_k=5)
+    triples = _get_related_triples(req.concept, depth=1)
+    prompt = _build_evaluation_prompt(req, search_results, triples)
+    raw_answer = call_ecnu_gpt(prompt)
+    data = _extract_json_object(raw_answer)
+
+    return QuizEvaluationResponse(
+        concept=req.concept,
+        overall_score=float(data.get("overall_score", 0.0)),
+        clarity_score=float(data.get("clarity_score", 0.0)),
+        correctness_score=float(data.get("correctness_score", 0.0)),
+        difficulty_match_score=float(data.get("difficulty_match_score", 0.0)),
+        evidence_score=float(data.get("evidence_score", 0.0)),
+        problems=data.get("problems", []),
+        suggestions=data.get("suggestions", []),
+    )
+
+
+@router.post("/submit", response_model=QuizSubmitResponse)
+async def submit_quiz(req: QuizSubmitRequest):
+    """Score a student's answer and recommend review concepts."""
+    search_results = _search_course_chunks(req.concept, top_k=5)
+    triples = _get_related_triples(req.concept, depth=1)
+    prompt = _build_submit_prompt(req, search_results, triples)
+    raw_answer = call_ecnu_gpt(prompt)
+    data = _extract_json_object(raw_answer)
+
+    suggested_review = data.get("suggested_review", [])
+    if not suggested_review:
+        suggested_review = [
+            triple["tail"]
+            for triple in triples
+            if triple.get("relation") in {"先修知识", "相关概念", "包含"}
+        ][:5]
+
+    score = float(data.get("score", 0.0))
+
+    return QuizSubmitResponse(
+        concept=req.concept,
+        score=score,
+        is_correct=bool(data.get("is_correct", score >= 0.6)),
+        feedback=data.get("feedback", ""),
+        wrong_concepts=data.get("wrong_concepts", []),
+        suggested_review=suggested_review,
         source_chunk_ids=[result.chunk.chunk_id for result in search_results],
         related_triples=triples,
     )

@@ -90,6 +90,9 @@ class RAGResponse(BaseModel):
     sources: list[str]              # 来源片段编号
     related_triples: list[TripleItem]  # 相关图谱关系
     intent: str                     # qa / compare / learning_path / quiz
+    evidence_score: float = 0.0
+    evidence_level: str = "low"
+    evidence_summary: str = ""
 
 
 # ============ 学习路径（TA） ============
@@ -112,6 +115,7 @@ class QuizRequest(BaseModel):
     concept: str          # 考察的知识点
     num_questions: int = 3
     question_types: list[str] = ["choice", "fill", "short_answer"]
+    difficulty: str = "medium"  # easy / medium / hard
 
 
 class QuizItem(BaseModel):

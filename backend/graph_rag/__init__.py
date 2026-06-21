@@ -3,6 +3,7 @@ Graph-RAG API routes.
 """
 from fastapi import APIRouter
 
+from learning_analytics import record_question_entities
 from shared.schemas import RAGRequest, RAGResponse, TripleItem
 
 from .pipeline import answer_question
@@ -13,6 +14,7 @@ router = APIRouter()
 @router.post("/ask", response_model=RAGResponse)
 async def ask(req: RAGRequest):
     """Answer a question with retrieved course chunks and KG triples."""
+    record_question_entities(req.question)
     result = answer_question(req.question, top_k=3, depth=1)
 
     return RAGResponse(
@@ -28,4 +30,7 @@ async def ask(req: RAGRequest):
             for triple in result["related_triples"]
         ],
         intent="qa",
+        evidence_score=result["evidence_score"],
+        evidence_level=result["evidence_level"],
+        evidence_summary=result["evidence_summary"],
     )
