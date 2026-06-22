@@ -3,6 +3,8 @@ Learning analytics module.
 
 Tracks asked concepts in memory and reports knowledge coverage.
 """
+import random
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -12,6 +14,7 @@ router = APIRouter()
 
 _asked_entities: list[str] = []
 _mistake_records: list[dict] = []
+_todo_items: list[dict] = []
 
 
 class RecordQuestionRequest(BaseModel):
@@ -38,6 +41,9 @@ class LearningReportResponse(BaseModel):
     recommended_next_steps: list[str]
     recommendation_basis: str
     summary: str
+    learning_loop: dict
+    priority_tasks: list[dict]
+    learner_state: dict
 
 
 class RecommendedConcept(BaseModel):
@@ -64,6 +70,25 @@ class MistakeRecordRequest(BaseModel):
 class MistakeBookResponse(BaseModel):
     count: int
     records: list[dict]
+
+
+class ManualMistakeRequest(BaseModel):
+    concept: str
+    note: str = ""
+
+
+class TodoCreateRequest(BaseModel):
+    content: str
+    source: str = "manual"
+
+
+class TodoUpdateRequest(BaseModel):
+    done: bool
+
+
+class TodoListResponse(BaseModel):
+    count: int
+    items: list[dict]
 
 
 def extract_entities_from_question(question: str) -> list[str]:
@@ -163,58 +188,91 @@ def recommend_concepts(limit: int = 8) -> list[RecommendedConcept]:
         ]
     )
 
+    recent_pool: list[RecommendedConcept] = []
+    weak_pool: list[RecommendedConcept] = []
+    expansion_pool: list[RecommendedConcept] = []
+    fallback_pool: list[RecommendedConcept] = []
+
+    def add_candidate(pool: list[RecommendedConcept], concept: str, reason: str, source: str):
+        if concept:
+            pool.append(RecommendedConcept(concept=concept, reason=reason, source=source))
+
+    for concept in reversed(asked[-8:]):
+        for related in _related_concepts(concept, limit=3):
+            add_candidate(
+                recent_pool,
+                related,
+                f"你最近关注过「{concept}」，该知识点与之相关，适合继续追问。",
+                "question_history",
+            )
+
+    for concept in mistake_concepts:
+        add_candidate(
+            weak_pool,
+            concept,
+            "该知识点出现在错题记录或建议复习中，建议优先回顾。",
+            "mistake_book",
+        )
+        for related in _related_concepts(concept, limit=3):
+            add_candidate(
+                weak_pool,
+                related,
+                f"它与错题知识点「{concept}」存在图谱关联，适合一起复习。",
+                "knowledge_graph",
+            )
+
+    for concept in all_entities:
+        if concept not in asked:
+            add_candidate(
+                expansion_pool,
+                concept,
+                "该知识点尚未覆盖，可作为下一步学习内容。",
+                "coverage",
+            )
+
+    for concept in all_entities:
+        add_candidate(
+            fallback_pool,
+            concept,
+            "该知识点可作为后续复习或拓展内容。",
+            "coverage" if concept not in asked else "question_history",
+        )
+
+    for pool in [recent_pool, weak_pool, expansion_pool, fallback_pool]:
+        random.shuffle(pool)
+
+    quotas = {
+        "recent": max(1, round(limit * 0.4)),
+        "weak": max(1, round(limit * 0.35)),
+        "expansion": max(1, limit - max(1, round(limit * 0.4)) - max(1, round(limit * 0.35))),
+    }
+
     recommendations: list[RecommendedConcept] = []
     seen: set[str] = set()
 
-    for concept in mistake_concepts:
-        if concept not in seen:
-            seen.add(concept)
-            recommendations.append(
-                RecommendedConcept(
-                    concept=concept,
-                    reason="该知识点出现在错题记录或建议复习中，建议优先回顾。",
-                    source="mistake_book",
-                )
-            )
-        for related in _related_concepts(concept, limit=3):
-            if related not in seen:
-                seen.add(related)
-                recommendations.append(
-                    RecommendedConcept(
-                        concept=related,
-                        reason=f"它与错题知识点「{concept}」存在图谱关联，适合一起复习。",
-                        source="knowledge_graph",
-                    )
-                )
-        if len(recommendations) >= limit:
-            return recommendations[:limit]
+    def take(pool: list[RecommendedConcept], count: int):
+        for item in pool:
+            if len(recommendations) >= limit or count <= 0:
+                break
+            if item.concept in seen:
+                continue
+            seen.add(item.concept)
+            recommendations.append(item)
+            count -= 1
 
-    for concept in reversed(asked):
-        for related in _related_concepts(concept, limit=3):
-            if related not in seen:
-                seen.add(related)
-                recommendations.append(
-                    RecommendedConcept(
-                        concept=related,
-                        reason=f"你最近关注过「{concept}」，该知识点与之相关，适合继续追问。",
-                        source="question_history",
-                    )
-                )
-            if len(recommendations) >= limit:
-                return recommendations[:limit]
+    take(recent_pool, quotas["recent"])
+    take(weak_pool, quotas["weak"])
+    take(expansion_pool, quotas["expansion"])
 
-    for concept in all_entities:
-        if concept not in asked and concept not in seen:
-            seen.add(concept)
-            recommendations.append(
-                RecommendedConcept(
-                    concept=concept,
-                    reason="该知识点尚未覆盖，可作为下一步学习内容。",
-                    source="coverage",
-                )
-            )
-        if len(recommendations) >= limit:
-            break
+    if len(recommendations) < limit:
+        mixed_remainder = [
+            *recent_pool,
+            *weak_pool,
+            *expansion_pool,
+            *fallback_pool,
+        ]
+        random.shuffle(mixed_remainder)
+        take(mixed_remainder, limit - len(recommendations))
 
     return recommendations[:limit]
 
@@ -240,10 +298,68 @@ async def add_mistake(req: MistakeRecordRequest):
     )
 
 
+@router.post("/mistakes/manual")
+async def add_manual_mistake(req: ManualMistakeRequest):
+    """Manually add a concept to the mistake book."""
+    note = req.note.strip() or "学习者手动加入错题本。"
+    return record_mistake(
+        concept=req.concept.strip(),
+        question=f"手动加入错题本：{req.concept.strip()}",
+        student_answer=note,
+        reference_answer="",
+        score=0.0,
+        feedback=note,
+        wrong_concepts=[req.concept.strip()],
+        suggested_review=[req.concept.strip()],
+    )
+
+
 @router.get("/mistakes", response_model=MistakeBookResponse)
 async def get_mistakes():
     """Return the in-memory mistake book."""
     return MistakeBookResponse(count=len(_mistake_records), records=_mistake_records)
+
+
+@router.get("/todos", response_model=TodoListResponse)
+async def get_todos():
+    """Return the learner's todo list."""
+    return TodoListResponse(count=len(_todo_items), items=_todo_items)
+
+
+@router.post("/todos")
+async def add_todo(req: TodoCreateRequest):
+    """Add a learning todo item."""
+    content = req.content.strip()
+    if not content:
+        return {"error": "待办内容不能为空"}
+
+    item = {
+        "id": len(_todo_items) + 1,
+        "content": content,
+        "source": req.source,
+        "done": False,
+    }
+    _todo_items.append(item)
+    return item
+
+
+@router.patch("/todos/{todo_id}")
+async def update_todo(todo_id: int, req: TodoUpdateRequest):
+    """Update todo completion state."""
+    for item in _todo_items:
+        if item.get("id") == todo_id:
+            item["done"] = req.done
+            return item
+    return {"error": "待办事项不存在"}
+
+
+@router.delete("/todos/{todo_id}")
+async def delete_todo(todo_id: int):
+    """Delete a todo item."""
+    for index, item in enumerate(_todo_items):
+        if item.get("id") == todo_id:
+            return _todo_items.pop(index)
+    return {"error": "待办事项不存在"}
 
 
 @router.get("/recommendations", response_model=RecommendedConceptsResponse)
@@ -397,6 +513,77 @@ async def get_learning_report():
         else:
             recommended_next_steps.append(f"建议继续学习未覆盖知识点：「{concept}」。")
 
+    todo_total = len(_todo_items)
+    todo_done = len([item for item in _todo_items if item.get("done")])
+    todo_pending = todo_total - todo_done
+    todo_completion_rate = todo_done / todo_total if todo_total else 0.0
+
+    learning_loop = {
+        "问答/学习记录": len(_asked_entities),
+        "发现薄弱点": len(weak_concepts[:10]),
+        "错题本记录": len(_mistake_records),
+        "Todo 总数": todo_total,
+        "已完成 Todo": todo_done,
+        "未完成 Todo": todo_pending,
+        "Todo 完成率": round(todo_completion_rate, 4),
+    }
+
+    priority_tasks = []
+    for concept in mistake_concepts[:3]:
+        priority_tasks.append(
+            {
+                "任务": f"复习错题词条：{concept}",
+                "依据": "该知识点出现在错题本或建议复习中，优先处理可以减少重复出错。",
+                "来源": "错题本",
+            }
+        )
+
+    for item in _todo_items:
+        if len(priority_tasks) >= 3:
+            break
+        if not item.get("done"):
+            priority_tasks.append(
+                {
+                    "任务": item.get("content", ""),
+                    "依据": "该任务已经加入 TodoList，但尚未完成。",
+                    "来源": "TodoList",
+                }
+            )
+
+    for concept in missing_concepts:
+        if len(priority_tasks) >= 3:
+            break
+        priority_tasks.append(
+            {
+                "任务": f"学习{concept}",
+                "依据": "该知识点仍未覆盖，适合作为下一步扩展学习内容。",
+                "来源": "知识覆盖度",
+            }
+        )
+
+    if coverage_rate < 0.35:
+        learner_type = "覆盖不足型"
+        learner_suggestion = "当前最需要扩大课程知识点覆盖面，建议优先学习未覆盖概念并生成学习路径。"
+    elif _mistake_records and average_mistake_score < 0.7:
+        learner_type = "错题集中型"
+        learner_suggestion = "当前薄弱主要来自答题反馈，建议先复习错题词条，再做针对性练习。"
+    elif todo_total and todo_completion_rate < 0.5:
+        learner_type = "计划待执行型"
+        learner_suggestion = "系统已经生成了一些行动项，建议先完成 TodoList 中的待办，再继续拓展新内容。"
+    else:
+        learner_type = "稳定推进型"
+        learner_suggestion = "当前学习节奏较稳定，可以继续沿知识图谱拓展，并用自动出题做阶段性检验。"
+
+    learner_state = {
+        "类型": learner_type,
+        "描述": (
+            f"当前学习者属于「{learner_type}」。"
+            f"知识覆盖率 {coverage_rate:.0%}，错题记录 {len(_mistake_records)} 条，"
+            f"Todo 完成率 {todo_completion_rate:.0%}。{learner_suggestion}"
+        ),
+        "建议": learner_suggestion,
+    }
+
     summary = (
         f"当前已覆盖 {len(mastered_concepts)}/{len(all_entities)} 个知识点，"
         f"覆盖率为 {coverage_rate:.2%}。"
@@ -425,4 +612,7 @@ async def get_learning_report():
         recommended_next_steps=recommended_next_steps,
         recommendation_basis=recommendation_basis,
         summary=summary,
+        learning_loop=learning_loop,
+        priority_tasks=priority_tasks,
+        learner_state=learner_state,
     )

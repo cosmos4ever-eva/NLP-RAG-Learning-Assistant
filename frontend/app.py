@@ -1,6 +1,7 @@
 from collections import defaultdict
 from html import escape
 import math
+import re
 from urllib.parse import quote
 
 import pandas as pd
@@ -27,6 +28,18 @@ def post_json(path: str, payload: dict):
 
 def get_json(path: str):
     response = requests.get(f"{API_BASE}{path}", timeout=60)
+    response.raise_for_status()
+    return response.json()
+
+
+def patch_json(path: str, payload: dict):
+    response = requests.patch(f"{API_BASE}{path}", json=payload, timeout=60)
+    response.raise_for_status()
+    return response.json()
+
+
+def delete_json(path: str):
+    response = requests.delete(f"{API_BASE}{path}", timeout=60)
     response.raise_for_status()
     return response.json()
 
@@ -65,12 +78,61 @@ def set_compare_pair(concept_a: str, concept_b: str):
 
 def set_quiz_concept(concept: str):
     st.session_state["quiz_concept_input"] = concept
+    st.session_state["active_tab"] = "自动出题与答题"
     st.session_state["quiz_concept_message"] = f"已选择「{concept}」，自动出题知识点已更新。"
 
 
 def set_learning_path_target(concept: str):
     st.session_state["learning_path_target_input"] = concept
     st.session_state["learning_path_message"] = f"已选择「{concept}」，学习路径目标知识点已更新。"
+
+
+def unique_items(items: list[str]) -> list[str]:
+    return list(dict.fromkeys([item for item in items if item]))
+
+
+def extract_concepts_from_text(text: str) -> list[str]:
+    quoted = re.findall(r"「([^」]+)」", text or "")
+    if quoted:
+        return unique_items(quoted)
+
+    prefix_patterns = [
+        r"优先回看[:：]\s*([^。；;]+)",
+        r"围绕[:：]\s*([^，。；;]+)",
+        r"选择未覆盖概念[:：]\s*([^，。；;]+)",
+    ]
+    for pattern in prefix_patterns:
+        match = re.search(pattern, text or "")
+        if match:
+            return unique_items([item.strip() for item in re.split(r"[、,，]", match.group(1))])
+    return []
+
+
+def build_plan_todo_text(title: str, content: str, concepts: list[str] | None = None) -> str:
+    concepts = unique_items(concepts or extract_concepts_from_text(content))
+    concept_text = "、".join(concepts[:3])
+
+    if "先补基础" in title:
+        return f"复习前序知识：{concept_text}" if concept_text else "复习错题相关概念的前序知识"
+    if "再练薄弱" in title:
+        return f"针对薄弱知识点练习：{concept_text}" if concept_text else "选择不确定的概念做一次针对性自测"
+    if "最后拓展" in title:
+        return f"学习{concept_text}" if len(concepts) == 1 else (
+            f"学习新知识点：{concept_text}" if concept_text else "选择未覆盖知识点继续拓展"
+        )
+    return f"学习{concept_text}" if len(concepts) == 1 else (content or title)
+
+
+def add_todo(content: str, source: str):
+    item = post_json(
+        "/api/analytics/todos",
+        {
+            "content": content,
+            "source": source,
+        },
+    )
+    st.session_state["todo_last_message"] = f"已加入 TodoList：{content}"
+    return item
 
 
 def recommendation_source_text(source: str) -> str:
@@ -368,6 +430,91 @@ def render_kg_relations(triples: list[dict], clickable: bool = True):
     st.dataframe(pd.DataFrame(triples), use_container_width=True, hide_index=True)
 
 
+def filter_compare_triples(triples: list[dict], concept_a: str, concept_b: str) -> list[dict]:
+    focus = {concept_a, concept_b}
+    return [
+        triple
+        for triple in triples
+        if triple.get("head") in focus or triple.get("tail") in focus
+    ]
+
+
+def render_learning_path_graph(path: list[str], edges: list[dict]):
+    graph_lines = ["digraph {"]
+    graph_lines.append('  graph [rankdir="LR", margin=0.05, bgcolor="transparent"];')
+    graph_lines.append('  node [shape=box, style="rounded,filled", fontsize=12, margin=0.14, fillcolor="#FFF5F5", color="#B91C1C", fontcolor="#B91C1C", penwidth=2.5];')
+    graph_lines.append('  edge [fontsize=10, arrowsize=0.75, color="#B91C1C", fontcolor="#B91C1C", penwidth=2];')
+
+    for step, node in enumerate(path, start=1):
+        safe_node = str(node).replace('"', '\\"')
+        graph_lines.append(
+            f'  "{safe_node}" [label="{step}. {safe_node}", fillcolor="#FFF5F5", color="#B91C1C", fontcolor="#B91C1C", penwidth=2.5];'
+        )
+
+    for edge in edges:
+        head = str(edge.get("head", "")).replace('"', '\\"')
+        tail = str(edge.get("tail", "")).replace('"', '\\"')
+        relation = str(edge.get("relation", "")).replace('"', '\\"')
+        graph_lines.append(f'  "{head}" -> "{tail}" [label="{relation}"];')
+
+    graph_lines.append("}")
+    st.graphviz_chart("\n".join(graph_lines), use_container_width=True)
+    st.caption("浅红节点表示学习路径中的关键知识点，深红线条表示路径关系。")
+
+
+def render_learning_step_cards(path: list[str], edges: list[dict]):
+    if not path:
+        return
+
+    st.markdown("**路径学习步骤**")
+    edge_by_tail = {edge.get("tail", ""): edge for edge in edges}
+    for index, concept in enumerate(path, start=1):
+        edge = edge_by_tail.get(concept)
+        if index == 1:
+            reason = "作为路径起点，建议先确认它的基本定义、作用和常见应用场景。"
+            action = "先用智能问答复述概念，再做一道基础题检查理解。"
+        elif edge:
+            predecessor = edge.get("head", "")
+            relation = edge.get("relation", "相关")
+            reason = f"它与「{predecessor}」存在“{relation}”关系，是继续理解后续概念的连接点。"
+            action = "学习时重点看它和上一步概念的区别、依赖关系和适用场景。"
+        else:
+            reason = "这是路径中的后续知识点，适合在前面概念基本清楚后继续学习。"
+            action = "建议结合课程资料和自动出题进行巩固。"
+
+        st.markdown(
+            f"""
+            <div style="
+                margin:10px 0;
+                padding:14px 16px;
+                border-left:5px solid #FF4B4B;
+                border-radius:8px;
+                background:#FFF5F5;
+                border-top:1px solid #FECACA;
+                border-right:1px solid #FECACA;
+                border-bottom:1px solid #FECACA;
+            ">
+                <div style="font-weight:700;color:#B91C1C;font-size:16px;margin-bottom:6px;">
+                    第 {index} 步：{escape(str(concept))}
+                </div>
+                <div style="color:#374151;font-size:14px;line-height:1.55;margin-bottom:4px;">
+                    <strong>为什么学：</strong>{escape(reason)}
+                </div>
+                <div style="color:#374151;font-size:14px;line-height:1.55;">
+                    <strong>建议动作：</strong>{escape(action)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("加入 TodoList", key=f"add_path_step_todo_{index}_{concept}"):
+            try:
+                add_todo(f"学习路径第 {index} 步：学习{concept}", "learning_path")
+                st.success("已加入 TodoList。")
+            except Exception as exc:
+                show_error(exc)
+
+
 def render_learning_path(data: dict):
     path = data.get("path", [])
     edges = data.get("edges", [])
@@ -377,37 +524,15 @@ def render_learning_path(data: dict):
         st.warning("暂未找到学习路径")
         return
 
-    st.success(" -> ".join(path))
-
-    graph_lines = ["digraph {"]
-    graph_lines.append('  graph [rankdir="LR", margin=0.05];')
-    graph_lines.append('  node [shape=box, style="rounded,filled", fontsize=12, margin=0.12, fillcolor="#eef6ff", color="#8ab6d6"];')
-    graph_lines.append('  edge [fontsize=10, arrowsize=0.7, color="#d95f02", fontcolor="#d95f02"];')
-    for step, node in enumerate(path, start=1):
-        safe_node = str(node).replace('"', '\\"')
-        graph_lines.append(f'  "{safe_node}" [label="{step}. {safe_node}"];')
-    for edge in edges:
-        head = str(edge.get("head", "")).replace('"', '\\"')
-        tail = str(edge.get("tail", "")).replace('"', '\\"')
-        relation = str(edge.get("relation", "")).replace('"', '\\"')
-        graph_lines.append(f'  "{head}" -> "{tail}" [label="{relation}"];')
-    graph_lines.append("}")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("路径步数", len(path))
+    col2.metric("关系数量", len(edges))
+    col3.metric("目标知识点", path[-1] if path else "-")
 
     st.markdown("**路径可视化**")
-    st.graphviz_chart("\n".join(graph_lines), use_container_width=True)
+    render_learning_path_graph(path, edges)
 
-    if edges:
-        st.markdown("**路径关系表**")
-        edge_rows = [
-            {
-                "序号": index + 1,
-                "前置知识": edge.get("head", ""),
-                "关系": edge.get("relation", ""),
-                "目标知识": edge.get("tail", ""),
-            }
-            for index, edge in enumerate(edges)
-        ]
-        st.dataframe(pd.DataFrame(edge_rows), use_container_width=True, hide_index=True)
+    render_learning_step_cards(path, edges)
 
     st.markdown("**学完后可继续探索路径中的前序知识点**")
     if follow_ups:
@@ -417,13 +542,27 @@ def render_learning_path(data: dict):
             for col_offset, concept in enumerate(unique_follow_ups[row_start:row_start + 4]):
                 index = row_start + col_offset
                 with cols[col_offset]:
-                    st.button(
-                        f"› {concept}",
-                        key=f"learning_followup_{index}_{concept}",
-                        help=f"点击后在智能问答中解释：{concept}",
-                        use_container_width=True,
-                        on_click=set_followup_question,
-                        args=(str(concept),),
+                    href = f"?qa_concept={quote(str(concept))}"
+                    st.markdown(
+                        f"""
+                        <a href="{href}" target="_self" style="
+                            display:block;
+                            width:100%;
+                            box-sizing:border-box;
+                            margin:0 0 10px 0;
+                            padding:9px 13px;
+                            border-radius:999px;
+                            border:1.5px solid #B91C1C;
+                            color:#B91C1C;
+                            background:#FFF5F5;
+                            text-align:center;
+                            text-decoration:none;
+                            font-size:15px;
+                            line-height:1.25;
+                            box-shadow:0 1px 2px rgba(185, 28, 28, 0.12);
+                        ">› {escape(str(concept))}</a>
+                        """,
+                        unsafe_allow_html=True,
                     )
     else:
         st.info("当前目标知识点暂无明确前序知识点。")
@@ -790,7 +929,13 @@ def render_reason_pie_chart(reason_counts: dict[str, int]):
         start_angle = end_angle
 
     svg = f"""
-    <div style="display:grid;grid-template-columns:minmax(210px, 300px) 1fr;gap:16px;align-items:center;">
+    <div style="
+        min-height:430px;
+        display:grid;
+        grid-template-columns:minmax(210px, 300px) 1fr;
+        gap:16px;
+        align-items:center;
+    ">
       <svg viewBox="0 0 {size} {size}" width="100%" style="max-width:300px;">
         {''.join(paths)}
         <circle cx="{center}" cy="{center}" r="62" fill="#FFFFFF" />
@@ -800,7 +945,7 @@ def render_reason_pie_chart(reason_counts: dict[str, int]):
       <div>{''.join(legend)}</div>
     </div>
     """
-    components.html(svg, height=340, scrolling=False)
+    components.html(svg, height=430, scrolling=False)
 
 
 def ability_profile_text(ability_scores: list[tuple[str, float, str]]) -> str:
@@ -832,6 +977,100 @@ def weakness_reason_text(reason_counts: dict[str, int]) -> str:
     return f"薄弱原因中「{label}」占比最高（{percent:.0%}）。{suggestions.get(label, '建议结合知识图谱关系继续复习。')}"
 
 
+def render_learning_loop(loop: dict):
+    if not loop:
+        return
+
+    st.markdown("**学习闭环概览**")
+    cols = st.columns(5)
+    cols[0].metric("学习记录", loop.get("问答/学习记录", 0))
+    cols[1].metric("薄弱点", loop.get("发现薄弱点", 0))
+    cols[2].metric("错题", loop.get("错题本记录", 0))
+    cols[3].metric("待办", loop.get("Todo 总数", 0))
+    cols[4].metric("完成率", f"{loop.get('Todo 完成率', 0):.0%}")
+
+    stages = [
+        ("提问/学习记录", loop.get("问答/学习记录", 0) > 0),
+        ("发现薄弱点", loop.get("发现薄弱点", 0) > 0),
+        ("加入错题本", loop.get("错题本记录", 0) > 0),
+        ("生成待办", loop.get("Todo 总数", 0) > 0),
+        ("完成复习", loop.get("已完成 Todo", 0) > 0),
+    ]
+    html = '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 18px;">'
+    for index, (label, done) in enumerate(stages):
+        bg = "#FFF5F5" if done else "#F3F4F6"
+        color = "#B91C1C" if done else "#6B7280"
+        border = "#FCA5A5" if done else "#D1D5DB"
+        html += (
+            f'<span style="padding:8px 12px;border-radius:999px;border:1px solid {border};'
+            f'background:{bg};color:{color};font-weight:600;font-size:14px;">{escape(label)}</span>'
+        )
+        if index < len(stages) - 1:
+            html += '<span style="color:#9CA3AF;">→</span>'
+    html += "</div>"
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_priority_tasks(tasks: list[dict]):
+    st.markdown("**当前优先任务**")
+    if not tasks:
+        st.info("暂无明确优先任务。可以先进行智能问答、自动出题或生成学习路径。")
+        return
+
+    cols = st.columns(3)
+    for index, task in enumerate(tasks[:3]):
+        with cols[index]:
+            content = task.get("任务", "")
+            source = task.get("来源", "")
+            reason = task.get("依据", "")
+            st.markdown(
+                f"""
+                <div style="
+                    min-height:150px;
+                    padding:14px 16px;
+                    border-radius:10px;
+                    border:1px solid #FCA5A5;
+                    background:#FFF5F5;
+                ">
+                    <div style="font-size:13px;color:#B91C1C;font-weight:700;margin-bottom:8px;">{escape(source)}</div>
+                    <div style="font-size:16px;color:#2F3440;font-weight:700;line-height:1.45;">{escape(content)}</div>
+                    <div style="font-size:13px;color:#6B7280;line-height:1.45;margin-top:10px;">{escape(reason)}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("加入 TodoList", key=f"report_priority_todo_{index}_{content}"):
+                try:
+                    add_todo(content, "learning_report")
+                    st.success("已加入 TodoList。")
+                except Exception as exc:
+                    show_error(exc)
+
+
+def render_learner_state(state: dict):
+    if not state:
+        return
+
+    st.markdown("**学习者状态总结**")
+    learner_type = state.get("类型", "暂无类型")
+    description = state.get("描述", "")
+    st.markdown(
+        f"""
+        <div style="
+            padding:16px 18px;
+            border-radius:10px;
+            background:#EFF6FF;
+            border:1px solid #BFDBFE;
+            margin-bottom:16px;
+        ">
+            <div style="font-weight:800;color:#1D4ED8;font-size:18px;margin-bottom:8px;">{escape(learner_type)}</div>
+            <div style="color:#1F2937;font-size:15px;line-height:1.65;">{escape(description)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_learning_report(data: dict):
     st.caption("学习报告更像个人诊断：它结合覆盖记录、错题本和知识图谱关系，判断“学得怎么样”和“下一步怎么补”。")
 
@@ -844,6 +1083,10 @@ def render_learning_report(data: dict):
 
     st.markdown("**诊断摘要**")
     st.info(data.get("summary", "暂无诊断摘要。"))
+
+    render_learner_state(data.get("learner_state", {}))
+    render_learning_loop(data.get("learning_loop", {}))
+    render_priority_tasks(data.get("priority_tasks", []))
 
     touched_count = profile.get("已触达知识点", data.get("asked_count", 0))
     weak_count = len(data.get("weak_concepts", []))
@@ -912,29 +1155,51 @@ def render_learning_report(data: dict):
             prereq_items.append(concept)
 
     fallback_steps = data.get("recommended_next_steps", [])
+    prereq_concepts = unique_items(prereq_items)[:3]
+    weak_practice_concepts = unique_items(weak_practice_items)[:3]
+    expansion_concepts = unique_items(expansion_items)[:3]
+
     prereq_text = (
-        f"优先回看：{'、'.join(list(dict.fromkeys(prereq_items))[:3])}。先补前序关系，再进入题目练习。"
+        f"优先回看：{'、'.join(prereq_concepts)}。先补前序关系，再进入题目练习。"
         if prereq_items
         else (fallback_steps[0] if fallback_steps else "优先回看错题相关概念的前序知识，先把基础链条补齐。")
     )
     practice_text = (
-        f"围绕：{'、'.join(list(dict.fromkeys(weak_practice_items))[:3])} 生成 2-3 道中等难度题，重点看反馈和解析。"
+        f"围绕：{'、'.join(weak_practice_concepts)} 生成 2-3 道中等难度题，重点看反馈和解析。"
         if weak_practice_items
         else "当前错题型薄弱点不明显；可以选择最近答错或不确定的概念做一次针对性自测。"
     )
     expansion_text = (
-        f"选择未覆盖概念：{'、'.join(list(dict.fromkeys(expansion_items))[:3])}，生成学习路径继续扩展课程地图。"
+        f"选择未覆盖概念：{'、'.join(expansion_concepts)}，生成学习路径继续扩展课程地图。"
         if expansion_items
         else "当前未覆盖推荐较少；可以从知识覆盖度页面选择黄色推荐补充节点继续拓展。"
     )
 
     cards = [
-        ("1. 先补基础", prereq_text, "#EFF6FF", "#2563EB"),
-        ("2. 再练薄弱", practice_text, "#FEF2F2", "#DC2626"),
-        ("3. 最后拓展", expansion_text, "#FFFBEB", "#D97706"),
+        (
+            "1. 先补基础",
+            prereq_text,
+            build_plan_todo_text("1. 先补基础", prereq_text, prereq_concepts),
+            "#EFF6FF",
+            "#2563EB",
+        ),
+        (
+            "2. 再练薄弱",
+            practice_text,
+            build_plan_todo_text("2. 再练薄弱", practice_text, weak_practice_concepts),
+            "#FEF2F2",
+            "#DC2626",
+        ),
+        (
+            "3. 最后拓展",
+            expansion_text,
+            build_plan_todo_text("3. 最后拓展", expansion_text, expansion_concepts),
+            "#FFFBEB",
+            "#D97706",
+        ),
     ]
     cols = st.columns(3)
-    for col, (title, content, bg, color) in zip(cols, cards):
+    for col, (title, content, todo_text, bg, color) in zip(cols, cards):
         with col:
             st.markdown(
                 f"""
@@ -951,9 +1216,99 @@ def render_learning_report(data: dict):
                 """,
                 unsafe_allow_html=True,
             )
+            if st.button("加入 TodoList", key=f"add_plan_todo_{title}"):
+                try:
+                    add_todo(todo_text, "learning_report")
+                    st.success("已加入 TodoList。")
+                except Exception as exc:
+                    show_error(exc)
 
     with st.expander("查看已覆盖知识点明细"):
         render_concept_list(data.get("mastered_concepts", []), "还没有记录到已覆盖知识点。")
+
+
+def render_mistake_book(data: dict):
+    records = list(reversed(data.get("records", [])))
+    unique_concepts = list(dict.fromkeys([item.get("concept", "") for item in records if item.get("concept")]))
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("错题记录", data.get("count", len(records)))
+    col2.metric("涉及词条", len(unique_concepts))
+    col3.metric("待复习", len([item for item in records if float(item.get("score", 0)) < 0.8]))
+
+    st.markdown("**手动加入错题词条**")
+    add_cols = st.columns([0.34, 0.48, 0.18])
+    with add_cols[0]:
+        concept = st.text_input("知识点词条", key="mistake_page_concept")
+    with add_cols[1]:
+        note = st.text_input("备注", key="mistake_page_note")
+    with add_cols[2]:
+        st.write("")
+        st.write("")
+        if st.button("加入", key="mistake_page_add", use_container_width=True):
+            if not concept.strip():
+                st.warning("请先输入知识点词条。")
+            else:
+                try:
+                    post_json(
+                        "/api/analytics/mistakes/manual",
+                        {"concept": concept.strip(), "note": note.strip()},
+                    )
+                    st.success("已加入错题本。")
+                    st.session_state.pop("mistake_book_page_data", None)
+                    st.rerun()
+                except Exception as exc:
+                    show_error(exc)
+
+    st.divider()
+    if not records:
+        st.info("错题本暂时为空。可以从自动出题答题结果中自动记录，也可以在这里手动加入词条。")
+        return
+
+    st.markdown("**错题词条复习**")
+    for item in records:
+        concept = item.get("concept", "未命名知识点")
+        score = float(item.get("score", 0))
+        question = item.get("question", "")
+        feedback = item.get("feedback", "")
+        suggested_review = "、".join(item.get("suggested_review", []))
+
+        st.markdown(
+            f"""
+            <div style="
+                padding:14px 16px;
+                border:1px solid #FCA5A5;
+                border-radius:10px;
+                background:#FFF5F5;
+                margin:12px 0 8px;
+            ">
+                <div style="font-size:18px;font-weight:700;color:#991B1B;">{escape(concept)}</div>
+                <div style="font-size:14px;color:#6B7280;margin-top:4px;">
+                    得分：{score:.2f}
+                    {f" · 建议复习：{escape(suggested_review)}" if suggested_review else ""}
+                </div>
+                {f'<div style="font-size:14px;color:#374151;margin-top:8px;">{escape(feedback or question)}</div>' if (feedback or question) else ''}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        action_cols = st.columns([0.2, 0.2, 0.2, 0.4])
+        with action_cols[0]:
+            if st.button("智能问答", key=f"mistake_qa_{item.get('id')}"):
+                set_followup_question(concept)
+                st.rerun()
+        with action_cols[1]:
+            if st.button("自动出题", key=f"mistake_quiz_{item.get('id')}"):
+                set_quiz_concept(concept)
+                st.rerun()
+        with action_cols[2]:
+            if st.button("加入 TodoList", key=f"mistake_todo_{item.get('id')}"):
+                try:
+                    add_todo(f"复习错题词条：{concept}", "mistake_book")
+                    st.success("已加入 TodoList。")
+                except Exception as exc:
+                    show_error(exc)
 
 
 st.title("NLP 课程 Graph-RAG 智能教学助手")
@@ -986,8 +1341,95 @@ with st.sidebar:
         except Exception as exc:
             show_error(exc)
 
+    st.divider()
+    st.header("学习者工具")
 
-tab_labels = ["智能问答", "自动出题与答题", "概念对比", "学习路径", "知识覆盖度", "学习诊断报告"]
+    with st.expander("错题本", expanded=False):
+        st.caption("可以把暂时没掌握的知识点手动加入错题本，后续会影响薄弱诊断和推荐。")
+        manual_mistake_concept = st.text_input("知识点词条", key="manual_mistake_concept")
+        manual_mistake_note = st.text_area("备注", key="manual_mistake_note", height=80)
+
+        if st.button("加入错题本", key="add_manual_mistake"):
+            if not manual_mistake_concept.strip():
+                st.warning("请先输入一个知识点词条。")
+            else:
+                try:
+                    post_json(
+                        "/api/analytics/mistakes/manual",
+                        {
+                            "concept": manual_mistake_concept.strip(),
+                            "note": manual_mistake_note.strip(),
+                        },
+                    )
+                    st.success("已加入错题本。")
+                    st.session_state.pop("mistake_book_page_data", None)
+                except Exception as exc:
+                    show_error(exc)
+
+        try:
+            mistakes = get_json("/api/analytics/mistakes")
+            records = list(reversed(mistakes.get("records", [])))[:5]
+            if records:
+                st.markdown("**最近错题词条**")
+                for record in records:
+                    concept = record.get("concept", "未命名知识点")
+                    st.markdown(f"- **{concept}**")
+            else:
+                st.caption("错题本暂时为空。")
+        except Exception as exc:
+            show_error(exc)
+
+    with st.expander("TodoList", expanded=False):
+        st.caption("可以把学习报告里的计划加入待办，也可以自己写下一步要做什么。")
+        todo_last_message = st.session_state.pop("todo_last_message", None)
+        if todo_last_message:
+            st.success(todo_last_message)
+
+        todo_content = st.text_input("新增待办", key="todo_content")
+        if st.button("添加待办", key="add_manual_todo"):
+            if not todo_content.strip():
+                st.warning("请先写下一个待办事项。")
+            else:
+                try:
+                    post_json(
+                        "/api/analytics/todos",
+                        {"content": todo_content.strip(), "source": "manual"},
+                    )
+                    st.success("已添加待办。")
+                    st.rerun()
+                except Exception as exc:
+                    show_error(exc)
+
+        try:
+            todos = get_json("/api/analytics/todos").get("items", [])
+            if todos:
+                for item in todos:
+                    todo_id = item.get("id")
+                    content = item.get("content", "")
+                    done = bool(item.get("done", False))
+                    row_cols = st.columns([0.82, 0.18])
+                    with row_cols[0]:
+                        checked = st.checkbox(
+                            content,
+                            value=done,
+                            key=f"todo_done_{todo_id}",
+                        )
+                    with row_cols[1]:
+                        remove_clicked = st.button("删除", key=f"delete_todo_{todo_id}")
+
+                    if checked != done:
+                        patch_json(f"/api/analytics/todos/{todo_id}", {"done": checked})
+                        st.rerun()
+                    if remove_clicked:
+                        delete_json(f"/api/analytics/todos/{todo_id}")
+                        st.rerun()
+            else:
+                st.caption("TodoList 暂时为空。")
+        except Exception as exc:
+            show_error(exc)
+
+
+tab_labels = ["智能问答", "自动出题与答题", "错题本", "概念对比", "学习路径", "知识覆盖度", "学习诊断报告"]
 qa_concept = st.query_params.get("qa_concept")
 if qa_concept:
     st.session_state["qa_question_input"] = f"请解释一下「{qa_concept}」这个知识点。"
@@ -1352,6 +1794,27 @@ if active_tab == "自动出题与答题":
                         show_error(exc)
 
 
+if active_tab == "错题本":
+    st.subheader("错题本")
+    st.caption("这里集中复习自动记录和手动加入的薄弱词条，可以继续追问、出题练习或加入待办。")
+
+    if st.button("刷新错题本", type="primary", key="refresh_mistake_book"):
+        try:
+            st.session_state["mistake_book_page_data"] = get_json("/api/analytics/mistakes")
+        except Exception as exc:
+            show_error(exc)
+
+    if "mistake_book_page_data" not in st.session_state:
+        try:
+            st.session_state["mistake_book_page_data"] = get_json("/api/analytics/mistakes")
+        except Exception as exc:
+            show_error(exc)
+
+    mistake_book_data = st.session_state.get("mistake_book_page_data")
+    if mistake_book_data:
+        render_mistake_book(mistake_book_data)
+
+
 if active_tab == "概念对比":
     st.subheader("易混概念对比")
     st.caption("这里更适合做“辨析训练”：系统会突出二者区别、易混原因、判断规则和一道辨析小题。")
@@ -1408,7 +1871,15 @@ if active_tab == "概念对比":
             with st.expander("课程资料来源"):
                 render_sources(data.get("source_chunk_ids", []))
             with st.expander("知识图谱关系"):
-                render_kg_relations(data.get("related_triples", []))
+                compare_triples = filter_compare_triples(
+                    data.get("related_triples", []),
+                    concept_a,
+                    concept_b,
+                )
+                if compare_triples:
+                    render_kg_relations(compare_triples)
+                else:
+                    st.info("暂无只围绕这两个概念的直接知识图谱关系。")
         except Exception as exc:
             show_error(exc)
 
@@ -1470,10 +1941,18 @@ if active_tab == "学习路径":
     if st.button("生成学习路径", type="primary"):
         try:
             data = post_json("/api/learning/path", {"target_entity": target_entity})
-            st.markdown("### 推荐路径")
-            render_learning_path(data)
+            st.session_state["learning_path_result"] = data
+            st.session_state["learning_path_result_target"] = target_entity
         except Exception as exc:
             show_error(exc)
+
+    path_result = st.session_state.get("learning_path_result")
+    if path_result:
+        st.markdown("### 推荐路径")
+        result_target = st.session_state.get("learning_path_result_target")
+        if result_target:
+            st.caption(f"当前路径目标：{result_target}")
+        render_learning_path(path_result)
 
 
 if active_tab == "知识覆盖度":
@@ -1500,30 +1979,11 @@ if active_tab == "学习诊断报告":
     if st.button("生成/刷新学习报告", type="primary", key="refresh_learning_report"):
         try:
             st.session_state["learning_report_data"] = get_json("/api/analytics/report")
-            st.session_state["mistakes_data"] = get_json("/api/analytics/mistakes")
         except Exception as exc:
             show_error(exc)
 
     report_data = st.session_state.get("learning_report_data")
     if report_data:
         render_learning_report(report_data)
-
-        st.markdown("**错题本记录**")
-        mistakes = st.session_state.get("mistakes_data", {})
-        records = mistakes.get("records", [])
-        if records:
-            rows = [
-                {
-                    "序号": item.get("id", index + 1),
-                    "知识点": item.get("concept", ""),
-                    "得分": item.get("score", 0),
-                    "题目": item.get("question", ""),
-                    "建议复习": "、".join(item.get("suggested_review", [])),
-                }
-                for index, item in enumerate(records)
-            ]
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-        else:
-            st.info("暂无错题记录。答题得分较低时，系统会自动加入错题本。")
     else:
         st.info("点击“生成/刷新学习报告”后查看个人学习诊断。")

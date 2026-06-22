@@ -1,6 +1,7 @@
 """
 Concept comparison module.
 """
+import random
 import re
 
 from fastapi import APIRouter
@@ -121,6 +122,7 @@ def _recommend_pairs_from_kg(limit: int = 8) -> list[ComparePair]:
                 if len(pairs) >= limit:
                     return pairs
 
+    random.shuffle(pairs)
     return pairs[:limit]
 
 
@@ -128,8 +130,23 @@ def _recommend_pairs_from_history(limit: int = 5) -> list[ComparePair]:
     kg = get_kg()
     pairs: list[ComparePair] = []
     seen: set[tuple[str, str]] = set()
+    recent_concepts = list(reversed(list(dict.fromkeys(_asked_entities))))[:8]
 
-    for concept in reversed(list(dict.fromkeys(_asked_entities))):
+    for index, concept_a in enumerate(recent_concepts):
+        for concept_b in recent_concepts[index + 1:]:
+            _add_pair(
+                pairs,
+                seen,
+                concept_a,
+                concept_b,
+                f"你最近连续关注过「{concept_a}」和「{concept_b}」，适合做辨析训练，帮助区分它们的边界。",
+                "history",
+            )
+            if len(pairs) >= limit:
+                random.shuffle(pairs)
+                return pairs[:limit]
+
+    for concept in recent_concepts:
         for triple in kg.get_neighbors(concept, depth=1):
             relation = triple.get("relation", "")
             if relation not in {"相关概念", "容易混淆", "先修知识", "包含"}:
@@ -145,9 +162,11 @@ def _recommend_pairs_from_history(limit: int = 5) -> list[ComparePair]:
                 "history",
             )
             if len(pairs) >= limit:
-                return pairs
+                random.shuffle(pairs)
+                return pairs[:limit]
 
-    return pairs
+    random.shuffle(pairs)
+    return pairs[:limit]
 
 
 @router.get("/recommend", response_model=CompareRecommendResponse)
@@ -155,14 +174,27 @@ async def recommend_compare_pairs(limit: int = 8):
     """Recommend confusing concept pairs from question history and the KG."""
     pairs: list[ComparePair] = []
     seen: set[tuple[str, str]] = set()
+    history_pairs = _recommend_pairs_from_history(limit=limit)
+    kg_pairs = _recommend_pairs_from_kg(limit=limit)
+    random.shuffle(history_pairs)
+    random.shuffle(kg_pairs)
 
-    for pair in _recommend_pairs_from_history(limit=limit):
+    history_quota = max(1, round(limit * 0.5))
+    kg_quota = max(1, limit - history_quota)
+
+    for pair in history_pairs[:history_quota]:
         _add_pair(pairs, seen, pair.concept_a, pair.concept_b, pair.reason, pair.source)
 
-    for pair in _recommend_pairs_from_kg(limit=limit):
+    for pair in kg_pairs[:kg_quota]:
         _add_pair(pairs, seen, pair.concept_a, pair.concept_b, pair.reason, pair.source)
-        if len(pairs) >= limit:
-            break
+
+    if len(pairs) < limit:
+        remainder = [*history_pairs, *kg_pairs]
+        random.shuffle(remainder)
+        for pair in remainder:
+            _add_pair(pairs, seen, pair.concept_a, pair.concept_b, pair.reason, pair.source)
+            if len(pairs) >= limit:
+                break
 
     return CompareRecommendResponse(pairs=pairs[:limit])
 
