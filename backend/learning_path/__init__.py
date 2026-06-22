@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from knowledge_graph.graph import get_kg
+from learning_analytics import record_concepts
 from shared.schemas import TripleItem
 
 router = APIRouter()
@@ -63,15 +64,26 @@ def _path_edges(path: list[str]) -> list[TripleItem]:
     return edges
 
 
+def _path_prerequisites(path: list[str], target: str) -> list[str]:
+    """Return only prerequisite concepts already shown in the learning path."""
+    return [
+        concept for concept in path
+        if concept and concept != target
+    ]
+
+
+
+
 @router.post("/path", response_model=LearningPathResponse)
 async def get_learning_path(req: LearningPathRequest):
     """Return prerequisite-based learning path for a target concept."""
     kg = get_kg()
+    record_concepts([req.target_entity])
     path = _build_prerequisite_path(req.target_entity)
 
     return LearningPathResponse(
         target=req.target_entity,
         path=path,
         edges=_path_edges(path),
-        follow_ups=kg.get_follow_ups(req.target_entity),
+        follow_ups=_path_prerequisites(path, req.target_entity),
     )

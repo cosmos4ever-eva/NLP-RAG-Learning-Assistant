@@ -114,7 +114,15 @@ class QuizRequest(BaseModel):
     """出题请求"""
     concept: str          # 考察的知识点
     num_questions: int = 3
-    question_types: list[str] = ["choice", "fill", "short_answer"]
+    question_types: list[str] = [
+        "choice",
+        "multiple_choice",
+        "true_false",
+        "fill",
+        "short_answer",
+        "compare",
+        "application",
+    ]
     difficulty: str = "medium"  # easy / medium / hard
 
 
