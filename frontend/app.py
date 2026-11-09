@@ -1,6 +1,7 @@
 from collections import defaultdict
 from html import escape
 import math
+import os
 import re
 from urllib.parse import quote
 
@@ -10,7 +11,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 
-API_BASE = "http://127.0.0.1:8000"
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
 
 
 st.set_page_config(
