@@ -29,6 +29,8 @@
 
 `repeat_stability_dev_20261124.json` 汇总三轮 Graph-RAG dev 重复实验的均值、波动、token、延迟和逐题分数稳定性，不包含回答正文。可用 `analyze_repeats.py` 对新的重复运行目录重新生成。
 
+`TEST_EVALUATION_20261124.md` 是提交 `8c55b6d` 冻结后唯一一次 sealed-test 运行的最终报告。该结果只能用于报告与未来版本的整体比较，不能再用于修改当前冻结版本。
+
 ## 建议比较的系统
 
 保持同一大模型、temperature、最大输出长度和问题顺序，只改变可用上下文：
