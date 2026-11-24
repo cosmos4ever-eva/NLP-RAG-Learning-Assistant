@@ -1,0 +1,41 @@
+{
+  "status": "FAIL",
+  "score": 0.0,
+  "metrics": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "split_sealed": false,
+    "gold_not_leaked": true,
+    "matrix_complete_ordered": true,
+    "input_not_mutated": true,
+    "stale_override_ignored": false,
+    "matching_override_applied": false,
+    "invalid_matrices_rejected": true
+  },
+  "checks": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "split_sealed": false,
+    "gold_not_leaked": true,
+    "matrix_complete_ordered": true,
+    "input_not_mutated": true,
+    "stale_override_ignored": false,
+    "matching_override_applied": false,
+    "invalid_matrices_rejected": true
+  },
+  "task": "leakage-safe-evaluation",
+  "model": "deepseek-flash",
+  "elapsed_seconds": 9.902,
+  "tool_calls": 8,
+  "write_calls": 2,
+  "agent_test_calls": 1,
+  "correction_prompts": 0,
+  "finish_reason": "stop",
+  "termination_reason": "completed",
+  "usage": {
+    "prompt_tokens": 7454,
+    "completion_tokens": 1290,
+    "total_tokens": 8744
+  },
+  "failure_class": "hidden_check_failure"
+}

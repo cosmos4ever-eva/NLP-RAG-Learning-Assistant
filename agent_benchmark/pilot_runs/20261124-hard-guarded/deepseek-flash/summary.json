@@ -1,0 +1,132 @@
+{
+  "model": "deepseek-flash",
+  "tasks": 3,
+  "passed": 1,
+  "pass_rate": 0.3333333333333333,
+  "results": [
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "partial_status_and_order": true,
+        "per_part_contract": true,
+        "call_boundaries": true,
+        "input_not_mutated": true,
+        "none_supported_safe": true
+      },
+      "checks": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "partial_status_and_order": true,
+        "per_part_contract": true,
+        "call_boundaries": true,
+        "input_not_mutated": true,
+        "none_supported_safe": true
+      },
+      "task": "partial-evidence-policy",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 6.354,
+      "tool_calls": 8,
+      "write_calls": 2,
+      "agent_test_calls": 1,
+      "correction_prompts": 0,
+      "finish_reason": "stop",
+      "termination_reason": "completed",
+      "usage": {
+        "prompt_tokens": 6256,
+        "completion_tokens": 672,
+        "total_tokens": 6928
+      },
+      "failure_class": "passed"
+    },
+    {
+      "status": "FAIL",
+      "score": 0.0,
+      "metrics": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "specific_over_directory": false,
+        "synonym_expansion": true,
+        "question_words_removed": true,
+        "multi_clause_coverage": true,
+        "neighbor_and_budget": false
+      },
+      "checks": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "specific_over_directory": false,
+        "synonym_expansion": true,
+        "question_words_removed": true,
+        "multi_clause_coverage": true,
+        "neighbor_and_budget": false
+      },
+      "task": "hybrid-retrieval-regression",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 12.936,
+      "tool_calls": 8,
+      "write_calls": 1,
+      "agent_test_calls": 2,
+      "correction_prompts": 0,
+      "finish_reason": "stop",
+      "termination_reason": "completed",
+      "usage": {
+        "prompt_tokens": 12192,
+        "completion_tokens": 2109,
+        "total_tokens": 14301
+      },
+      "failure_class": "hidden_check_failure"
+    },
+    {
+      "status": "FAIL",
+      "score": 0.0,
+      "metrics": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "split_sealed": false,
+        "gold_not_leaked": true,
+        "matrix_complete_ordered": true,
+        "input_not_mutated": true,
+        "stale_override_ignored": false,
+        "matching_override_applied": false,
+        "invalid_matrices_rejected": true
+      },
+      "checks": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "split_sealed": false,
+        "gold_not_leaked": true,
+        "matrix_complete_ordered": true,
+        "input_not_mutated": true,
+        "stale_override_ignored": false,
+        "matching_override_applied": false,
+        "invalid_matrices_rejected": true
+      },
+      "task": "leakage-safe-evaluation",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 9.902,
+      "tool_calls": 8,
+      "write_calls": 2,
+      "agent_test_calls": 1,
+      "correction_prompts": 0,
+      "finish_reason": "stop",
+      "termination_reason": "completed",
+      "usage": {
+        "prompt_tokens": 7454,
+        "completion_tokens": 1290,
+        "total_tokens": 8744
+      },
+      "failure_class": "hidden_check_failure"
+    }
+  ],
+  "official_ageval_attempt": false,
+  "compatibility_note": "ageval 0.10.0 local runtime requires AF_UNIX on native Windows",
+  "hidden_checks_passed": 18,
+  "hidden_checks_total": 23,
+  "failure_classes": {
+    "hidden_check_failure": 2,
+    "passed": 1
+  },
+  "regraded_without_model_calls": true
+}

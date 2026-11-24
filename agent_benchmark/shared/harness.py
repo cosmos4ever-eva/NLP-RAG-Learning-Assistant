@@ -9,6 +9,8 @@ from typing import Any
 
 from ageval_sdk import Agent, RunContext, RunTerminal
 
+from completion_policy import correction_prompt, decide_completion
+
 
 TOOLS = [
     {"type": "function", "function": {"name": "list_files", "description": "List workspace files.", "parameters": {"type": "object", "properties": {}}}},
@@ -75,30 +77,67 @@ async def run_coding_task(ctx: RunContext) -> RunTerminal:
     params = ctx.params if isinstance(ctx.params, dict) else {}
     files = params.get("submission_files") if isinstance(params.get("submission_files"), list) else []
     profile = str(params.get("active_profile") or "solver")
-    messages: list[dict[str, Any]] = [{"role": "system", "content": "You are a coding agent. Inspect the workspace, edit only implementation Python files, run public tests, and finish when the task is solved."}]
+    messages: list[dict[str, Any]] = [{"role": "system", "content": "You are a coding agent. Be concise and action-oriented: inspect the workspace, edit only implementation Python files, and run public tests. A task is not complete until you have written an implementation file and run the tests."}]
     tool_count = 0
+    write_calls = 0
+    test_calls = 0
+    corrections = 0
     final_text = ""
+    finish_reason = ""
+    termination_reason = "turn_budget_exhausted"
+    next_prompt = instruction
     agent = Agent(attempt_id=ctx.scope.attempt_id)
     async with agent.session(profile, max_turns=12) as session:
         for turn in range(12):
-            prompt = instruction if turn == 0 else "Continue solving the task. Use tools as needed; when complete, briefly state completion without another tool call."
-            response = await session.invoke(prompt, tools=TOOLS, messages=messages)
+            response = await session.invoke(next_prompt, tools=TOOLS, messages=messages)
             if not response.get("ok"):
                 return RunTerminal.failed(str(response.get("error") or "agent_invoke_failed"))
+            finish_reason = str(response.get("finish_reason") or "")
             calls = _native_tool_calls(response)
             if not calls:
                 final_text = str(response.get("text") or response.get("content") or "")
+                decision = decide_completion(
+                    finish_reason=finish_reason,
+                    write_calls=write_calls,
+                    test_calls=test_calls,
+                    turn=turn + 1,
+                    max_turns=12,
+                )
+                termination_reason = decision["reason"]
+                if decision["action"] == "continue":
+                    corrections += 1
+                    next_prompt = correction_prompt(decision["reason"])
+                    continue
                 break
             call = calls[0]
             args = call.get("arguments") if isinstance(call.get("arguments"), dict) else {}
-            result = _tool_result(root, str(call.get("name") or ""), args)
+            name = str(call.get("name") or "")
+            result = _tool_result(root, name, args)
             tool_count += 1
+            if name == "write_file" and result.get("ok"):
+                write_calls += 1
+            if name == "run_public_tests":
+                test_calls += 1
             _append_tool_messages(messages, call, result, tool_count)
+            next_prompt = "Continue solving the task with tools."
 
     submission = {}
     for raw in files:
         path = _safe_path(root, str(raw))
         submission[str(raw)] = path.read_text(encoding="utf-8") if path.is_file() else None
     public_result = _tool_result(root, "run_public_tests", {})
-    ctx.publish_json("submission", {"files": submission, "tool_calls": tool_count, "public_tests": public_result, "final_text": final_text})
+    ctx.publish_json(
+        "submission",
+        {
+            "files": submission,
+            "tool_calls": tool_count,
+            "write_calls": write_calls,
+            "agent_test_calls": test_calls,
+            "correction_prompts": corrections,
+            "finish_reason": finish_reason,
+            "termination_reason": termination_reason,
+            "public_tests": public_result,
+            "final_text": final_text,
+        },
+    )
     return RunTerminal.completed("coding-task-finished")

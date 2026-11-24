@@ -1,0 +1,132 @@
+{
+  "model": "deepseek-v4-pro",
+  "tasks": 3,
+  "passed": 1,
+  "pass_rate": 0.3333333333333333,
+  "results": [
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "partial_status_and_order": true,
+        "per_part_contract": true,
+        "call_boundaries": true,
+        "input_not_mutated": true,
+        "none_supported_safe": true
+      },
+      "checks": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "partial_status_and_order": true,
+        "per_part_contract": true,
+        "call_boundaries": true,
+        "input_not_mutated": true,
+        "none_supported_safe": true
+      },
+      "task": "partial-evidence-policy",
+      "model": "deepseek-v4-pro",
+      "elapsed_seconds": 24.552,
+      "tool_calls": 8,
+      "write_calls": 2,
+      "agent_test_calls": 1,
+      "correction_prompts": 0,
+      "finish_reason": "stop",
+      "termination_reason": "completed",
+      "usage": {
+        "prompt_tokens": 8963,
+        "completion_tokens": 1632,
+        "total_tokens": 10595
+      },
+      "failure_class": "passed"
+    },
+    {
+      "status": "FAIL",
+      "score": 0.0,
+      "metrics": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "specific_over_directory": false,
+        "synonym_expansion": true,
+        "question_words_removed": true,
+        "multi_clause_coverage": true,
+        "neighbor_and_budget": false
+      },
+      "checks": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "specific_over_directory": false,
+        "synonym_expansion": true,
+        "question_words_removed": true,
+        "multi_clause_coverage": true,
+        "neighbor_and_budget": false
+      },
+      "task": "hybrid-retrieval-regression",
+      "model": "deepseek-v4-pro",
+      "elapsed_seconds": 71.392,
+      "tool_calls": 7,
+      "write_calls": 1,
+      "agent_test_calls": 1,
+      "correction_prompts": 1,
+      "finish_reason": "stop",
+      "termination_reason": "completed",
+      "usage": {
+        "prompt_tokens": 22931,
+        "completion_tokens": 5280,
+        "total_tokens": 28211
+      },
+      "failure_class": "hidden_check_failure"
+    },
+    {
+      "status": "FAIL",
+      "score": 0.0,
+      "metrics": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "split_sealed": false,
+        "gold_not_leaked": true,
+        "matrix_complete_ordered": true,
+        "input_not_mutated": true,
+        "stale_override_ignored": true,
+        "matching_override_applied": false,
+        "invalid_matrices_rejected": true
+      },
+      "checks": {
+        "files_present": true,
+        "public_tests_passed": true,
+        "split_sealed": false,
+        "gold_not_leaked": true,
+        "matrix_complete_ordered": true,
+        "input_not_mutated": true,
+        "stale_override_ignored": true,
+        "matching_override_applied": false,
+        "invalid_matrices_rejected": true
+      },
+      "task": "leakage-safe-evaluation",
+      "model": "deepseek-v4-pro",
+      "elapsed_seconds": 65.856,
+      "tool_calls": 8,
+      "write_calls": 2,
+      "agent_test_calls": 1,
+      "correction_prompts": 1,
+      "finish_reason": "stop",
+      "termination_reason": "completed",
+      "usage": {
+        "prompt_tokens": 21065,
+        "completion_tokens": 5108,
+        "total_tokens": 26173
+      },
+      "failure_class": "hidden_check_failure"
+    }
+  ],
+  "official_ageval_attempt": false,
+  "compatibility_note": "ageval 0.10.0 local runtime requires AF_UNIX on native Windows",
+  "hidden_checks_passed": 19,
+  "hidden_checks_total": 23,
+  "failure_classes": {
+    "hidden_check_failure": 2,
+    "passed": 1
+  },
+  "regraded_without_model_calls": true
+}

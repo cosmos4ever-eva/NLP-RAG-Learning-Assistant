@@ -1,0 +1,23 @@
+{
+  "files": {
+    "pipeline.py": "from schemas import make_part\n\n\ndef answer_parts(parts, retrieve, generate):\n    result_parts = []\n    supported_count = 0\n\n    for question in parts:\n        sources = retrieve(question)\n        if sources:\n            answer = generate(question, sources)\n            result_parts.append(make_part(question, \"answered\", answer, sources))\n            supported_count += 1\n        else:\n            result_parts.append(\n                make_part(\n                    question,\n                    \"insufficient_evidence\",\n                    None,\n                    sources,\n                    [question],\n                )\n            )\n\n    if supported_count == len(parts):\n        status = \"answered\"\n    elif supported_count == 0:\n        status = \"insufficient_evidence\"\n    else:\n        status = \"partial\"\n\n    return {\"status\": status, \"parts\": result_parts}\n",
+    "schemas.py": "def make_part(question, status, answer=None, sources=None, missing_material=None):\n    return {\n        \"question\": question,\n        \"status\": status,\n        \"answer\": answer,\n        \"sources\": list(sources or []),\n        \"missing_material\": list(missing_material or []),\n    }\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Tests pass. Let me verify the implementation handles edge cases correctly, particularly the \"retrieve each subquestion exactly once\" and \"do not mutate input list\" requirements. My implementation iterates over `parts` directly without mutating, and calls `retrieve` once per question. Good.\n\nOne consideration: `missing_material` for unsupported parts uses `[question]`. If the question is falsy (empty string), `[question]` is still a non-empty list, so it satisfies \"non-empty\". Good.\n\nThe implementation is complete.The implementation is complete and tests pass.\n\n**Summary of changes:**\n\n- **`schemas.py`**: Updated `make_part` to include a `missing_material` field (defaulting to an empty list) alongside `question`, `status`, `answer`, and `sources`.\n\n- **`pipeline.py`**: Rewrote `answer_parts` to:\n  - Iterate over the input `parts` without mutating it.\n  - Call `retrieve(question)` exactly once per subquestion.\n  - Call `generate(question, sources)` only when evidence (`sources`) is non-empty.\n  - Build each part with the correct status and fields:\n    - Supported → `status=\"answered\"`, generated answer, sources, empty `missing_material`.\n    - Unsupported → `status=\"insufficient_evidence\"`, `answer=None`, empty sources, non-empty `missing_material`.\n  - Compute overall status as `answered`, `partial`, or `insufficient_evidence` based on the mix of supported/unsupported parts.",
+  "tool_calls": 8,
+  "write_calls": 2,
+  "agent_test_calls": 1,
+  "correction_prompts": 0,
+  "finish_reason": "stop",
+  "termination_reason": "completed",
+  "usage": {
+    "prompt_tokens": 8963,
+    "completion_tokens": 1632,
+    "total_tokens": 10595
+  }
+}

@@ -82,3 +82,25 @@ All eight broken baselines fail and all eight reference implementations pass. Al
 Both configurations passed `partial-evidence-policy` and failed the other two tasks. Flash came closer on the failed tasks: it missed only the directory-vs-specific ranking check in hybrid retrieval, while Pro also missed clause coverage and neighbor budgeting. In leakage-safe evaluation, Flash correctly sealed gold fields, produced the ordered matrix, preserved inputs, and rejected invalid matrices, but omitted the required manifest count and digest-bound adjudication semantics. Pro spent the available interaction budget reasoning about the task and did not update the two implementation files.
 
 This harder group now distinguishes partial progress even though binary task pass rates remain tied. It also exposes a meaningful agent failure mode: extensive reasoning without completing an artifact before the turn budget expires.
+
+### Completion-guard repair and controlled rerun
+
+The pilot harness previously treated every text-only model response as final. In the original V4 Pro run, the two failed tasks ended after long responses reached the 4,096-token completion limit, before the model wrote or tested an implementation. This was a harness interaction failure, not sufficient evidence that the model was intrinsically worse.
+
+The repaired harness now:
+
+- continues after `finish_reason=length`;
+- refuses completion before at least one successful implementation write and one agent-initiated public-test run;
+- records model finish reasons, token usage, writes, tests, correction prompts, termination reason, and failure class;
+- keeps the original 12-turn limit and runs the independent evaluator only after the attempt ends.
+
+The same model identifiers and three hard tasks were then rerun once:
+
+| Configuration | Task PASS | Hidden checks passed | Mean time/task | Mean tool calls/task | Guard corrections |
+|---|---:|---:|---:|---:|---:|
+| DeepSeek Flash | 1/3 (33.3%) | 18/23 (78.3%) | 9.73 s | 8.00 | 0 |
+| DeepSeek V4 Pro | 1/3 (33.3%) | 19/23 (82.6%) | 53.93 s | 7.67 | 2 |
+
+V4 Pro's two 4,096-token responses were caught and redirected to tool use. It then wrote implementation files and ran public tests on both formerly no-action tasks, raising its deterministic hidden-check result from 14/23 to 19/23. Binary task PASS remains 1/3 because the resulting implementations still missed hidden requirements. Flash changed from 19/23 to 18/23 on a single run, showing why repeated attempts are still required before ranking models.
+
+The corrected conclusion is therefore narrower: the earlier 60.9% V4 Pro hidden-check result was confounded by premature harness termination. With that confound removed, V4 Pro no longer trails Flash on hidden checks in this one-run comparison, although it remains much slower and neither model solves the two hardest tasks completely.

@@ -24,3 +24,9 @@ ageval run agent_benchmark --profiles agent_benchmark/profiles.deepseek-pro.yaml
 ```
 
 On native Windows, ageval 0.10.0's local runtime currently requires `socket.AF_UNIX`; use Linux/WSL/Docker for official Attempts. `pilot_runner.py` is a clearly labeled local compatibility runner for validating the same task instructions and evaluators; its outputs are not presented as official ageval evidence.
+
+## Completion guard and diagnostics
+
+Both harnesses reject a text-only completion when the model output was truncated, no implementation file has been written, or the agent has not run the public tests. A short corrective prompt lets the same attempt continue within the fixed 12-turn budget. Saved results distinguish agent-initiated tests from the evaluator's post-run test and record `finish_reason`, `termination_reason`, write/test/correction counts, token usage (compatibility runner), and a deterministic failure class.
+
+The guarded hard-task rerun is stored under `pilot_runs/20261124-hard-guarded/`. It uses the same three task instructions, model identifiers, and evaluators as the original `20261124-hard/` run, so the two directories form the before/after harness comparison.

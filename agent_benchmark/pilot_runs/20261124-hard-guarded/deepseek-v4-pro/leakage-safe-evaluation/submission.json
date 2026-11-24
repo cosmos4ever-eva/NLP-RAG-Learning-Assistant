@@ -1,0 +1,23 @@
+{
+  "files": {
+    "runner.py": "SYSTEMS = [\"llm_only\", \"tfidf_rag\", \"graph_rag\"]\n\n\ndef run_experiment(cases, split, generate):\n    selected = [case for case in cases if case.get(\"split\") == split]\n    answers = []\n    for case in selected:\n        sanitized = {\"id\": case[\"id\"], \"question\": case[\"question\"]}\n        for system in SYSTEMS:\n            answers.append({\n                \"id\": case[\"id\"],\n                \"system\": system,\n                \"answer\": generate(sanitized, system),\n            })\n    manifest = {\n        \"split\": split,\n        \"cases\": len(selected),\n        \"systems\": list(SYSTEMS),\n        \"answers\": len(answers),\n    }\n    return {\"manifest\": manifest, \"answers\": answers}\n",
+    "scorer.py": "import hashlib\n\nSYSTEMS = [\"llm_only\", \"tfidf_rag\", \"graph_rag\"]\n\n\ndef score_answers(cases, answers, judge, apply_overrides=False):\n    case_by_id = {case[\"id\"]: case for case in cases}\n    seen = set()\n\n    for answer in answers:\n        answer_id = answer.get(\"id\")\n        system = answer.get(\"system\")\n\n        if system not in SYSTEMS:\n            raise ValueError(\"unknown system: %r\" % (system,))\n        if answer_id not in case_by_id:\n            raise ValueError(\"extra answer for unknown case: %r\" % (answer_id,))\n\n        key = (answer_id, system)\n        if key in seen:\n            raise ValueError(\"duplicate answer: %r\" % (key,))\n        seen.add(key)\n\n    for case in cases:\n        for system in SYSTEMS:\n            if (case[\"id\"], system) not in seen:\n                raise ValueError(\n                    \"missing answer for case %r system %r\" % (case[\"id\"], system)\n                )\n\n    rows = []\n    for answer in answers:\n        case = case_by_id[answer[\"id\"]]\n        score = judge(case, answer)\n\n        if apply_overrides:\n            override = case.get(\"legacy_override\")\n            if override:\n                stored_sha = override.get(\"answer_sha256\")\n                current_sha = hashlib.sha256(\n                    answer[\"answer\"].encode(\"utf-8\")\n                ).hexdigest()\n                if stored_sha == current_sha:\n                    for key, value in override.items():\n                        if key != \"answer_sha256\":\n                            score[key] = value\n\n        if \"total\" not in score:\n            score[\"total\"] = sum(\n                value\n                for value in score.values()\n                if isinstance(value, (int, float)) and not isinstance(value, bool)\n            )\n\n        rows.append({**answer, **score, \"adjudication\": \"scored\"})\n\n    return rows\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Public tests pass. The implementation is complete:\n\n- `runner.py`: filters by split, iterates systems in exact order, passes sanitized `{id, question}` to `generate`, returns manifest + complete unique answers matrix, never mutates cases.\n- `scorer.py`: validates answers (unknown-system, extra, duplicate, missing) before judging, passes full gold case to judge, applies legacy overrides only when `answer_sha256` matches the current answer's SHA-256, and returns rows with `adjudication` and `total`.",
+  "tool_calls": 8,
+  "write_calls": 2,
+  "agent_test_calls": 1,
+  "correction_prompts": 1,
+  "finish_reason": "stop",
+  "termination_reason": "completed",
+  "usage": {
+    "prompt_tokens": 21065,
+    "completion_tokens": 5108,
+    "total_tokens": 26173
+  }
+}
