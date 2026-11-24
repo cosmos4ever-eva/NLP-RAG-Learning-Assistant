@@ -1,0 +1,9 @@
+format: ageval.task/1
+task_id: reproducible-eval-runner
+parameters: {active_profile: solver, submission_files: [runner.py]}
+agent_profiles: [{id: solver}]
+limits: {wall_time_seconds: 600, agent_invocations: 12}
+artifacts:
+  publishable: [{id: submission, path: artifacts/submission.json}]
+evaluation:
+  inputs: [{artifact: submission, target: artifacts/submission.json}]

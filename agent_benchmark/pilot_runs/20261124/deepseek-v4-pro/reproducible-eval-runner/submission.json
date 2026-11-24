@@ -1,0 +1,12 @@
+{
+  "files": {
+    "runner.py": "SYSTEMS = [\"llm_only\", \"tfidf_rag\", \"graph_rag\"]\n\n\ndef run_cases(cases, generate, retrieval_only=False):\n    rows = []\n    for case in cases:\n        for system in SYSTEMS:\n            if retrieval_only:\n                answer = None\n            else:\n                answer = generate(case, system)\n            rows.append({\"id\": case[\"id\"], \"system\": system, \"answer\": answer})\n\n    manifest = {\n        \"systems\": SYSTEMS,\n        \"case_count\": len(cases),\n        \"generation_requested\": not retrieval_only,\n    }\n\n    return {\"manifest\": manifest, \"rows\": rows}\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Fixed `runner.py`. The implementation now:\n\n- Returns a dictionary with `manifest` and `rows`.\n- Emits systems in the exact order `llm_only`, `tfidf_rag`, `graph_rag` for every case.\n- Each row contains `id`, `system`, and `answer`.\n- In retrieval-only mode, never calls `generate` and sets `answer=None`.\n- Manifest includes `systems`, `case_count`, and `generation_requested`.\n- Does not mutate input cases.\n\nPublic tests pass.",
+  "tool_calls": 6
+}

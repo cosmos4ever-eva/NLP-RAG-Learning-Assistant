@@ -1,0 +1,15 @@
+format: ageval.profiles/1
+environment: local
+agent_profiles:
+  "*":
+    executor: openai-http
+    model:
+      id: deepseek-flash
+      api: chat
+      timeout: 180
+      watchdog: 240
+    base_url: https://api.deepseek.com
+    api_key: ${DEEPSEEK_API_KEY}
+    extensions:
+      - plugin: openai-http
+      - plugin: local

@@ -1,0 +1,123 @@
+{
+  "model": "deepseek-flash",
+  "tasks": 5,
+  "passed": 5,
+  "pass_rate": 1.0,
+  "results": [
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "all_parallel_relations": true,
+        "duplicates_removed": true
+      },
+      "checks": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "all_parallel_relations": true,
+        "duplicates_removed": true
+      },
+      "task": "graph-multiedge",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 6.398,
+      "tool_calls": 6
+    },
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "generator_not_called": true,
+        "structured_abstention": true,
+        "evidence_path_preserved": true
+      },
+      "checks": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "generator_not_called": true,
+        "structured_abstention": true,
+        "evidence_path_preserved": true
+      },
+      "task": "evidence-abstention",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 6.603,
+      "tool_calls": 6
+    },
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "each_clause_has_anchor": true,
+        "neighbors_added": true,
+        "unique_and_bounded": true
+      },
+      "checks": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "each_clause_has_anchor": true,
+        "neighbors_added": true,
+        "unique_and_bounded": true
+      },
+      "task": "multi-question-retrieval",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 11.628,
+      "tool_calls": 7
+    },
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "top_level_schema": true,
+        "source_schema": true,
+        "frontend_renders": true,
+        "frontend_error_safe": true
+      },
+      "checks": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "top_level_schema": true,
+        "source_schema": true,
+        "frontend_renders": true,
+        "frontend_error_safe": true
+      },
+      "task": "api-evidence-schema",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 7.607,
+      "tool_calls": 6
+    },
+    {
+      "status": "PASS",
+      "score": 1.0,
+      "metrics": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "three_system_matrix": true,
+        "retrieval_only_zero_calls": true,
+        "manifest_complete": true,
+        "input_not_mutated": true
+      },
+      "checks": {
+        "source_present": true,
+        "public_tests_passed": true,
+        "three_system_matrix": true,
+        "retrieval_only_zero_calls": true,
+        "manifest_complete": true,
+        "input_not_mutated": true
+      },
+      "task": "reproducible-eval-runner",
+      "model": "deepseek-flash",
+      "elapsed_seconds": 7.163,
+      "tool_calls": 6
+    }
+  ],
+  "official_ageval_attempt": false,
+  "compatibility_note": "ageval 0.10.0 local runtime requires AF_UNIX on native Windows",
+  "regraded_without_model_calls": true
+}

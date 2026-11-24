@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "score": 1.0,
+  "metrics": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "three_system_matrix": true,
+    "retrieval_only_zero_calls": true,
+    "manifest_complete": true,
+    "input_not_mutated": true
+  },
+  "checks": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "three_system_matrix": true,
+    "retrieval_only_zero_calls": true,
+    "manifest_complete": true,
+    "input_not_mutated": true
+  },
+  "task": "reproducible-eval-runner",
+  "model": "deepseek-v4-pro",
+  "elapsed_seconds": 11.112,
+  "tool_calls": 6
+}

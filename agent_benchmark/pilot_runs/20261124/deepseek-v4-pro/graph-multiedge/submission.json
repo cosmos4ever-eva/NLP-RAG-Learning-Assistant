@@ -1,0 +1,12 @@
+{
+  "files": {
+    "graph.py": "TRIPLES = [\n    {\"head\": \"分布式表示\", \"relation\": \"相关概念\", \"tail\": \"One-hot编码\"},\n    {\"head\": \"分布式表示\", \"relation\": \"容易混淆\", \"tail\": \"One-hot编码\"},\n    {\"head\": \"词嵌入\", \"relation\": \"相关概念\", \"tail\": \"分布式表示\"},\n    {\"head\": \"词嵌入\", \"relation\": \"相关概念\", \"tail\": \"分布式表示\"},\n]\n\n\nclass KnowledgeGraph:\n    def __init__(self, triples=None):\n        self.triples = list(triples or TRIPLES)\n        self.edges = []\n        seen = set()\n        for triple in self.triples:\n            key = (triple[\"head\"], triple[\"relation\"], triple[\"tail\"])\n            if key in seen:\n                continue\n            seen.add(key)\n            self.edges.append(\n                {\n                    \"head\": triple[\"head\"],\n                    \"relation\": triple[\"relation\"],\n                    \"tail\": triple[\"tail\"],\n                }\n            )\n\n    def get_neighbors(self, entity):\n        found = []\n        for edge in self.edges:\n            if entity in (edge[\"head\"], edge[\"tail\"]):\n                found.append(\n                    {\n                        \"head\": edge[\"head\"],\n                        \"relation\": edge[\"relation\"],\n                        \"tail\": edge[\"tail\"],\n                    }\n                )\n        return found\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "The fix is complete and public tests pass.\n\nThe problem was that `self.edges` was a dictionary keyed by `(head, tail)`, so when the same head/tail pair had multiple relations, later declarations overwrote earlier ones. I changed it to store a list of distinct `(head, relation, tail)` triples, deduplicating exact duplicates via a `seen` set, and updated `get_neighbors` to iterate over that list and return each incident relationship once.",
+  "tool_calls": 5
+}

@@ -1,0 +1,12 @@
+{
+  "files": {
+    "graph.py": "TRIPLES = [\n    {\"head\": \"分布式表示\", \"relation\": \"相关概念\", \"tail\": \"One-hot编码\"},\n    {\"head\": \"分布式表示\", \"relation\": \"容易混淆\", \"tail\": \"One-hot编码\"},\n    {\"head\": \"词嵌入\", \"relation\": \"相关概念\", \"tail\": \"分布式表示\"},\n    {\"head\": \"词嵌入\", \"relation\": \"相关概念\", \"tail\": \"分布式表示\"},\n]\n\n\nclass KnowledgeGraph:\n    def __init__(self, triples=None):\n        self.triples = []\n        self.edges = []\n        seen = set()\n        for triple in triples if triples is not None else TRIPLES:\n            key = (triple[\"head\"], triple[\"relation\"], triple[\"tail\"])\n            if key in seen:\n                continue\n            seen.add(key)\n            self.triples.append(\n                {\"head\": key[0], \"relation\": key[1], \"tail\": key[2]}\n            )\n            self.edges.append(key)\n\n    def get_neighbors(self, entity):\n        found = []\n        for head, relation, tail in self.edges:\n            if entity in (head, tail):\n                found.append({\"head\": head, \"relation\": relation, \"tail\": tail})\n        return found\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Fixed `graph.py`:\n\n- Deduplicates on the full `(head, relation, tail)` triple, so distinct relations between the same head/tail are all preserved while exact duplicate declarations are dropped.\n- `get_neighbors(entity)` now iterates over all stored triples and returns each incident relationship exactly once as `{\"head\", \"relation\", \"tail\"}`.\n- Public API unchanged; public tests pass.",
+  "tool_calls": 6
+}

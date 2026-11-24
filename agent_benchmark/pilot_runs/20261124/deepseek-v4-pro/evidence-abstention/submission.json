@@ -1,0 +1,12 @@
+{
+  "files": {
+    "pipeline.py": "def answer_question(question, retrieve, graph_lookup, generate):\n    sources = retrieve(question)\n    triples = graph_lookup(question)\n\n    if not sources and not triples:\n        return {\n            \"status\": \"insufficient_evidence\",\n            \"explanation\": (\n                \"Current course evidence is insufficient to answer this question.\"\n            ),\n            \"material_needed\": (\n                \"Additional course material containing relevant textual sources \"\n                \"or knowledge graph triples is needed.\"\n            ),\n        }\n\n    answer = generate(question, sources, triples)\n    return {\"status\": \"answered\", \"answer\": answer, \"sources\": sources, \"triples\": triples}\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "The fix is complete and public tests pass.\n\nI updated `pipeline.py` so that when both `retrieve(question)` and `graph_lookup(question)` return no evidence (empty/falsy), it returns a structured abstention without calling `generate`:\n\n- `status=\"insufficient_evidence\"`\n- an `explanation` stating current course evidence is insufficient\n- a `material_needed` field identifying the kind of material required\n\nWhen any evidence exists, it preserves the original behavior and returns `status=\"answered\"` with the answer, sources, and triples.",
+  "tool_calls": 6
+}

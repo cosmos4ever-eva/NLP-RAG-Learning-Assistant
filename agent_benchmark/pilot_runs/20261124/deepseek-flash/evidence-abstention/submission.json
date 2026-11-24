@@ -1,0 +1,12 @@
+{
+  "files": {
+    "pipeline.py": "def answer_question(question, retrieve, graph_lookup, generate):\n    sources = retrieve(question)\n    triples = graph_lookup(question)\n\n    if not sources and not triples:\n        return {\n            \"status\": \"insufficient_evidence\",\n            \"answer\": (\n                \"The current course evidence is insufficient to answer this \"\n                \"question. Relevant course material (such as lecture notes, \"\n                \"readings, or other course documents covering this topic) is \"\n                \"needed.\"\n            ),\n            \"sources\": sources,\n            \"triples\": triples,\n        }\n\n    answer = generate(question, sources, triples)\n    return {\"status\": \"answered\", \"answer\": answer, \"sources\": sources, \"triples\": triples}\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Fixed `pipeline.py`:\n\n- **No evidence** (both `retrieve` and `graph_lookup` return empty): returns a structured abstention with `status=\"insufficient_evidence\"`, an explanation that current course evidence is insufficient, and a note identifying the kind of material needed (relevant course material such as lecture notes, readings, or course documents on the topic). `generate` is not called.\n- **Any evidence present**: unchanged behavior — calls `generate` and returns `status=\"answered\"` with `answer`, `sources`, and `triples`.\n- Function signature preserved; tests untouched.\n\nPublic tests pass (1 test, OK).",
+  "tool_calls": 6
+}

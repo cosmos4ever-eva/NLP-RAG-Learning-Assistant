@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "score": 1.0,
+  "metrics": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "each_clause_has_anchor": true,
+    "neighbors_added": true,
+    "unique_and_bounded": true
+  },
+  "checks": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "each_clause_has_anchor": true,
+    "neighbors_added": true,
+    "unique_and_bounded": true
+  },
+  "task": "multi-question-retrieval",
+  "model": "deepseek-v4-pro",
+  "elapsed_seconds": 71.952,
+  "tool_calls": 8
+}

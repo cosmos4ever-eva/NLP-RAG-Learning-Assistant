@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "score": 1.0,
+  "metrics": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "top_level_schema": true,
+    "source_schema": true,
+    "frontend_renders": true,
+    "frontend_error_safe": true
+  },
+  "checks": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "top_level_schema": true,
+    "source_schema": true,
+    "frontend_renders": true,
+    "frontend_error_safe": true
+  },
+  "task": "api-evidence-schema",
+  "model": "deepseek-v4-pro",
+  "elapsed_seconds": 33.122,
+  "tool_calls": 6
+}

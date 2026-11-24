@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "score": 1.0,
+  "metrics": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "generator_not_called": true,
+    "structured_abstention": true,
+    "evidence_path_preserved": true
+  },
+  "checks": {
+    "source_present": true,
+    "public_tests_passed": true,
+    "generator_not_called": true,
+    "structured_abstention": true,
+    "evidence_path_preserved": true
+  },
+  "task": "evidence-abstention",
+  "model": "deepseek-v4-pro",
+  "elapsed_seconds": 12.097,
+  "tool_calls": 6
+}

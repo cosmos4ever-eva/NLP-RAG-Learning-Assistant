@@ -1,0 +1,12 @@
+{
+  "files": {
+    "runner.py": "SYSTEMS = [\"llm_only\", \"tfidf_rag\", \"graph_rag\"]\n\n\ndef run_cases(cases, generate, retrieval_only=False):\n    \"\"\"Run every case through each system in a fixed order.\n\n    Returns a dict with a deterministic ``manifest`` and ``rows``. In\n    retrieval-only mode ``generate`` is never called and answers are ``None``.\n    Input cases are not mutated.\n    \"\"\"\n    case_list = list(cases)\n    rows = []\n    for case in case_list:\n        case_id = case[\"id\"]\n        for system in SYSTEMS:\n            if retrieval_only:\n                answer = None\n            else:\n                answer = generate(case, system)\n            rows.append({\"id\": case_id, \"system\": system, \"answer\": answer})\n\n    manifest = {\n        \"systems\": list(SYSTEMS),\n        \"case_count\": len(case_list),\n        \"generation_requested\": not retrieval_only,\n    }\n    return {\"manifest\": manifest, \"rows\": rows}\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Fixed `runner.py`:\n\n- `SYSTEMS` is now `[\"llm_only\", \"tfidf_rag\", \"graph_rag\"]`, emitted in that exact order per case.\n- Returns `{\"manifest\": {...}, \"rows\": [...]}` instead of a bare list.\n- Manifest contains `systems`, `case_count`, and `generation_requested` (`not retrieval_only`).\n- Retrieval-only mode never calls `generate` and sets `answer=None`.\n- Input cases are only read (copied into a list), never mutated.\n\nPublic tests pass.",
+  "tool_calls": 6
+}
