@@ -4,7 +4,7 @@ from pathlib import Path
 import requests
 
 ROOT=Path(__file__).resolve().parent
-TASKS={"graph-multiedge":"graph.py","evidence-abstention":"pipeline.py","multi-question-retrieval":"retriever.py","api-evidence-schema":"api.py","reproducible-eval-runner":"runner.py"}
+TASKS={"graph-multiedge":["graph.py"],"evidence-abstention":["pipeline.py"],"multi-question-retrieval":["retriever.py"],"api-evidence-schema":["api.py"],"reproducible-eval-runner":["runner.py"],"partial-evidence-policy":["pipeline.py","schemas.py"],"hybrid-retrieval-regression":["retriever.py","config.py"],"leakage-safe-evaluation":["runner.py","scorer.py"]}
 TOOLS=[
  {"type":"function","function":{"name":"list_files","description":"List workspace files","parameters":{"type":"object","properties":{}}}},
  {"type":"function","function":{"name":"read_file","description":"Read a UTF-8 file","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}},
@@ -30,7 +30,7 @@ def tool(root,name,args):
     except Exception as exc: return {"ok":False,"error":f"{type(exc).__name__}:{exc}"}
 def evaluator(task):
     path=ROOT/"tasks"/task/"evaluator.py"; spec=importlib.util.spec_from_file_location("eval_"+task,path); mod=importlib.util.module_from_spec(spec); spec.loader.exec_module(mod); return mod
-def solve(task,filename,model,key,out):
+def solve(task,filenames,model,key,out):
     with tempfile.TemporaryDirectory() as tmp:
         work=Path(tmp); shutil.copytree(ROOT/"tasks"/task/"data",work,dirs_exist_ok=True)
         instruction=(work/"instruction.md").read_text(encoding="utf-8")
@@ -47,16 +47,19 @@ def solve(task,filename,model,key,out):
                 trajectory.append({"turn":turn+1,"tool":fn["name"],"args":args,"result":result})
                 messages.append({"role":"tool","tool_call_id":call["id"],"content":json.dumps(result,ensure_ascii=False)})
         public=tool(work,"run_public_tests",{}); artifact=out/"submission.json"; out.mkdir(parents=True,exist_ok=True)
-        artifact.write_text(json.dumps({"files":{filename:(work/filename).read_text(encoding="utf-8")},"public_tests":public,"final_text":final,"tool_calls":len(trajectory)},ensure_ascii=False,indent=2),encoding="utf-8")
+        artifact.write_text(json.dumps({"files":{name:(work/name).read_text(encoding="utf-8") for name in filenames},"public_tests":public,"final_text":final,"tool_calls":len(trajectory)},ensure_ascii=False,indent=2),encoding="utf-8")
         result=evaluator(task).evaluate({"artifacts":{"submission":str(artifact)}}); result.update(task=task,model=model,elapsed_seconds=round(time.time()-started,3),tool_calls=len(trajectory))
         (out/"pilot_trajectory.jsonl").write_text("\n".join(json.dumps(x,ensure_ascii=False) for x in trajectory),encoding="utf-8"); (out/"result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
         return result
 def main():
-    p=argparse.ArgumentParser(); p.add_argument("--model",required=True); p.add_argument("--output",required=True); a=p.parse_args(); key=os.getenv("DEEPSEEK_API_KEY","").strip()
+    p=argparse.ArgumentParser(); p.add_argument("--model",required=True); p.add_argument("--output",required=True); p.add_argument("--tasks",help="Comma-separated task ids; default all"); a=p.parse_args(); key=os.getenv("DEEPSEEK_API_KEY","").strip()
     if not key: raise SystemExit("DEEPSEEK_API_KEY missing")
+    selected=[x.strip() for x in a.tasks.split(",")] if a.tasks else list(TASKS)
+    unknown=set(selected)-set(TASKS)
+    if unknown: raise SystemExit("unknown tasks: "+", ".join(sorted(unknown)))
     output=Path(a.output); results=[]
-    for task,filename in TASKS.items():
-        result=solve(task,filename,a.model,key,output/task); results.append(result); print(task,result["status"],flush=True)
+    for task in selected:
+        result=solve(task,TASKS[task],a.model,key,output/task); results.append(result); print(task,result["status"],flush=True)
     summary={"model":a.model,"tasks":len(results),"passed":sum(r["status"]=="PASS" for r in results),"pass_rate":sum(r["status"]=="PASS" for r in results)/len(results),"results":results,"official_ageval_attempt":False,"compatibility_note":"ageval 0.10.0 local runtime requires AF_UNIX on native Windows"}
     (output/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False))
 if __name__=="__main__": main()

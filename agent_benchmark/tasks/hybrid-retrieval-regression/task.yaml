@@ -1,0 +1,9 @@
+format: ageval.task/1
+task_id: hybrid-retrieval-regression
+parameters: {active_profile: solver, submission_files: [retriever.py, config.py]}
+agent_profiles: [{id: solver}]
+limits: {wall_time_seconds: 900, agent_invocations: 12}
+artifacts:
+  publishable: [{id: submission, path: artifacts/submission.json}]
+evaluation:
+  inputs: [{artifact: submission, target: artifacts/submission.json}]

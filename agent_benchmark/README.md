@@ -1,6 +1,6 @@
 # NLP-RAG Maintenance Benchmark
 
-An ageval-compatible coding-agent benchmark derived from real maintenance failures in the NLP course learning assistant. It evaluates the coding agent, not the assistant's answer quality.
+An ageval-compatible coding-agent benchmark derived from real maintenance failures in the NLP course learning assistant. It evaluates the coding agent, not the assistant's answer quality. Version 0.2 contains five foundation tasks and three adversarial tasks.
 
 ## Tasks
 
@@ -9,6 +9,9 @@ An ageval-compatible coding-agent benchmark derived from real maintenance failur
 3. `multi-question-retrieval`: cover every subquestion and nearby context.
 4. `api-evidence-schema`: align API evidence fields with frontend consumption.
 5. `reproducible-eval-runner`: emit all three baselines and support retrieval-only runs.
+6. `partial-evidence-policy`: make per-subquestion generation decisions while preserving a cross-file response contract.
+7. `hybrid-retrieval-regression`: satisfy stopword, rarity, synonym, clause, neighbor, and budget constraints together.
+8. `leakage-safe-evaluation`: seal test cases and gold fields, validate answer matrices, and prevent stale adjudication reuse.
 
 Every task contains a broken implementation in `data/`, public smoke tests, an independent `evaluator.py`, and hidden reference material under `evaluation/`. Deterministic evaluator checks alone decide PASS/FAIL.
 

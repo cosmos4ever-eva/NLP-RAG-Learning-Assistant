@@ -1,0 +1,26 @@
+{
+  "status": "FAIL",
+  "score": 0.0,
+  "metrics": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "specific_over_directory": false,
+    "synonym_expansion": true,
+    "question_words_removed": true,
+    "multi_clause_coverage": true,
+    "neighbor_and_budget": true
+  },
+  "checks": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "specific_over_directory": false,
+    "synonym_expansion": true,
+    "question_words_removed": true,
+    "multi_clause_coverage": true,
+    "neighbor_and_budget": true
+  },
+  "task": "hybrid-retrieval-regression",
+  "model": "deepseek-flash",
+  "elapsed_seconds": 14.772,
+  "tool_calls": 9
+}

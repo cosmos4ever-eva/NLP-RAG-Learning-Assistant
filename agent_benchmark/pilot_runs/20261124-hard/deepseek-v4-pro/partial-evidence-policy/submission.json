@@ -1,0 +1,13 @@
+{
+  "files": {
+    "pipeline.py": "from schemas import make_part\n\n\ndef answer_parts(parts, retrieve, generate):\n    results = []\n    supported_count = 0\n\n    for question in parts:\n        sources = retrieve(question)\n        if sources:\n            answer = generate(question, sources)\n            results.append(make_part(question, \"answered\", answer, sources))\n            supported_count += 1\n        else:\n            results.append(\n                make_part(\n                    question,\n                    \"insufficient_evidence\",\n                    None,\n                    sources,\n                    [question],\n                )\n            )\n\n    if supported_count == len(parts):\n        status = \"answered\"\n    elif supported_count == 0:\n        status = \"insufficient_evidence\"\n    else:\n        status = \"partial\"\n\n    return {\"status\": status, \"parts\": results}\n",
+    "schemas.py": "def make_part(question, status, answer=None, sources=None, missing_material=None):\n    return {\n        \"question\": question,\n        \"status\": status,\n        \"answer\": answer,\n        \"sources\": list(sources or []),\n        \"missing_material\": list(missing_material or []),\n    }\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Public tests pass. The implementation now:\n\n- Retrieves each subquestion exactly once (single loop, single `retrieve` call per question).\n- Calls `generate` only when `sources` is truthy (evidence present).\n- Returns ordered `parts` list with all required keys.\n- Supported parts: `status=\"answered\"`, `answer` from generate, `sources` list, `missing_material=[]`.\n- Unsupported parts: `status=\"insufficient_evidence\"`, `answer=None`, `sources=[]`, `missing_material=[question]` (non-empty).\n- Overall status computed correctly for all/partial/none.\n- Does not mutate the input list (iterates without modification).",
+  "tool_calls": 8
+}

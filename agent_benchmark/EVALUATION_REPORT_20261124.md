@@ -61,3 +61,24 @@ The initial abstention evaluator accepted only Chinese keywords and only `answer
 ## Remaining acceptance gap
 
 Run the dataset on Linux/WSL/Docker with official `ageval run`, preferably with at least two distinct Agent harnesses and three attempts per task. Preserve official `lock.json`, `result.json`, and `trajectory.jsonl` before presenting the experiment as a full ageval comparison.
+
+## Version 0.2 harder-task extension
+
+Three adversarial tasks were added after both configurations passed the five foundation tasks:
+
+1. `partial-evidence-policy`: a two-file contract that retrieves each subquestion exactly once, generates only supported parts, preserves order, and reports `answered` / `partial` / `insufficient_evidence` correctly.
+2. `hybrid-retrieval-regression`: simultaneous stopword removal, configured synonym expansion, broad-parent downweighting, rarity-aware ranking, clause coverage, neighboring pages, and context budgets.
+3. `leakage-safe-evaluation`: dev/test sealing, gold-field sanitization before generation, complete three-system matrices, immutable inputs, and digest-bound adjudication overrides.
+
+All eight broken baselines fail and all eight reference implementations pass. All eight task packages pass `ageval lock`.
+
+### Hard-task compatibility pilot
+
+| Configuration | Task PASS | Hidden checks passed | Mean time/task | Mean tool calls/task |
+|---|---:|---:|---:|---:|
+| DeepSeek Flash | 1/3 (33.3%) | 19/23 (82.6%) | 10.22 s | 8.33 |
+| DeepSeek V4 Pro | 1/3 (33.3%) | 14/23 (60.9%) | 46.59 s | 6.00 |
+
+Both configurations passed `partial-evidence-policy` and failed the other two tasks. Flash came closer on the failed tasks: it missed only the directory-vs-specific ranking check in hybrid retrieval, while Pro also missed clause coverage and neighbor budgeting. In leakage-safe evaluation, Flash correctly sealed gold fields, produced the ordered matrix, preserved inputs, and rejected invalid matrices, but omitted the required manifest count and digest-bound adjudication semantics. Pro spent the available interaction budget reasoning about the task and did not update the two implementation files.
+
+This harder group now distinguishes partial progress even though binary task pass rates remain tied. It also exposes a meaningful agent failure mode: extensive reasoning without completing an artifact before the turn budget expires.

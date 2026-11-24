@@ -1,0 +1,13 @@
+{
+  "files": {
+    "pipeline.py": "from schemas import make_part\n\n\ndef answer_parts(parts, retrieve, generate):\n    questions = list(parts)\n    result_parts = []\n    supported = 0\n\n    for question in questions:\n        sources = retrieve(question)\n        if sources:\n            supported += 1\n            result_parts.append(\n                make_part(question, \"answered\", generate(question, sources), sources)\n            )\n        else:\n            result_parts.append(\n                make_part(\n                    question,\n                    \"insufficient_evidence\",\n                    None,\n                    [],\n                    [\"No evidence was retrieved for this subquestion.\"],\n                )\n            )\n\n    if supported == len(questions) and questions:\n        status = \"answered\"\n    elif supported == 0:\n        status = \"insufficient_evidence\"\n    else:\n        status = \"partial\"\n\n    return {\"status\": status, \"parts\": result_parts}\n",
+    "schemas.py": "def make_part(question, status, answer=None, sources=None, missing_material=None):\n    return {\n        \"question\": question,\n        \"status\": status,\n        \"answer\": answer,\n        \"sources\": list(sources or []),\n        \"missing_material\": list(missing_material or []),\n    }\n"
+  },
+  "public_tests": {
+    "ok": true,
+    "returncode": 0,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  "final_text": "Fixed both files:\n\n- **`schemas.py`**: `make_part` now includes `missing_material` (defaults to an empty list) alongside `question`, `status`, `answer`, and `sources`.\n- **`pipeline.py`**: `answer_parts` now:\n  - Copies the input into a new list (no mutation) and preserves order.\n  - Calls `retrieve` exactly once per subquestion.\n  - Calls `generate(question, sources)` only when evidence exists.\n  - Emits `answered` parts for supported subquestions and `insufficient_evidence` parts with `answer=None` and non-empty `missing_material` otherwise.\n  - Computes overall status as `answered` (all supported), `partial` (mixture), or `insufficient_evidence` (none supported).\n\nPublic tests pass.",
+  "tool_calls": 8
+}

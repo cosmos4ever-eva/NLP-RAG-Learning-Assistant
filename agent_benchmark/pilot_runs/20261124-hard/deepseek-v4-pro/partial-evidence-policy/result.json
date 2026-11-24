@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "score": 1.0,
+  "metrics": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "partial_status_and_order": true,
+    "per_part_contract": true,
+    "call_boundaries": true,
+    "input_not_mutated": true,
+    "none_supported_safe": true
+  },
+  "checks": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "partial_status_and_order": true,
+    "per_part_contract": true,
+    "call_boundaries": true,
+    "input_not_mutated": true,
+    "none_supported_safe": true
+  },
+  "task": "partial-evidence-policy",
+  "model": "deepseek-v4-pro",
+  "elapsed_seconds": 22.266,
+  "tool_calls": 8
+}

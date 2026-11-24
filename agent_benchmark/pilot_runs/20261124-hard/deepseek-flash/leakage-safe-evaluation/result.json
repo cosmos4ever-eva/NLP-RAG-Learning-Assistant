@@ -1,0 +1,30 @@
+{
+  "status": "FAIL",
+  "score": 0.0,
+  "metrics": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "split_sealed": false,
+    "gold_not_leaked": true,
+    "matrix_complete_ordered": true,
+    "input_not_mutated": true,
+    "stale_override_ignored": false,
+    "matching_override_applied": false,
+    "invalid_matrices_rejected": true
+  },
+  "checks": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "split_sealed": false,
+    "gold_not_leaked": true,
+    "matrix_complete_ordered": true,
+    "input_not_mutated": true,
+    "stale_override_ignored": false,
+    "matching_override_applied": false,
+    "invalid_matrices_rejected": true
+  },
+  "task": "leakage-safe-evaluation",
+  "model": "deepseek-flash",
+  "elapsed_seconds": 9.025,
+  "tool_calls": 8
+}

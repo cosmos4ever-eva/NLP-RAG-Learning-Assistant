@@ -1,6 +1,6 @@
 format: ageval.dataset/1
 dataset_id: local/nlp-rag-maintenance
-version: "0.1.0"
-description: "Five deterministic coding-agent tasks derived from real NLP-RAG maintenance failures."
+version: "0.2.0"
+description: "Eight deterministic coding-agent tasks derived from real NLP-RAG maintenance failures."
 tasks:
   root: tasks

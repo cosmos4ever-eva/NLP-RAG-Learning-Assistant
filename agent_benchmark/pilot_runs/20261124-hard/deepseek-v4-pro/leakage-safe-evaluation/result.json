@@ -1,0 +1,30 @@
+{
+  "status": "FAIL",
+  "score": 0.0,
+  "metrics": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "split_sealed": false,
+    "gold_not_leaked": false,
+    "matrix_complete_ordered": false,
+    "input_not_mutated": true,
+    "stale_override_ignored": false,
+    "matching_override_applied": false,
+    "invalid_matrices_rejected": false
+  },
+  "checks": {
+    "files_present": true,
+    "public_tests_passed": true,
+    "split_sealed": false,
+    "gold_not_leaked": false,
+    "matrix_complete_ordered": false,
+    "input_not_mutated": true,
+    "stale_override_ignored": false,
+    "matching_override_applied": false,
+    "invalid_matrices_rejected": false
+  },
+  "task": "leakage-safe-evaluation",
+  "model": "deepseek-v4-pro",
+  "elapsed_seconds": 59.025,
+  "tool_calls": 5
+}
