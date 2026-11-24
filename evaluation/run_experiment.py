@@ -69,6 +69,15 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def load_cases(split):
+    cases = [
+        json.loads(line)
+        for line in (ROOT / 'evaluation/questions.jsonl').read_text(encoding='utf-8').splitlines()
+        if line.strip()
+    ]
+    return [row for row in cases if row['split'] == split]
+
+
 def verify_model_access(session, key, provider):
     try:
         response = session.get(
@@ -172,10 +181,11 @@ def summarize_retrieval(rows):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--output', required=True)
+    ap.add_argument('--split', choices=('dev', 'test'), default='dev')
     ap.add_argument('--generate', action='store_true')
     ap.add_argument('--direct', action='store_true', help='Connect without environment proxies; TLS verification remains enabled.')
-    ap.add_argument('--start-index', type=int, default=0, help='Zero-based inclusive index within the dev split.')
-    ap.add_argument('--end-index', type=int, help='Zero-based exclusive index within the dev split.')
+    ap.add_argument('--start-index', type=int, default=0, help='Zero-based inclusive index within the selected split.')
+    ap.add_argument('--end-index', type=int, help='Zero-based exclusive index within the selected split.')
     ap.add_argument('--systems', default='llm_only,tfidf_rag,graph_rag')
     ap.add_argument('--provider', choices=sorted(PROVIDERS), default='ecnu')
     ap.add_argument('--model', help='Override the provider default model.')
@@ -194,8 +204,7 @@ def main():
         verify_model_access(session, key, provider)
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=False)
-    cases = [json.loads(line) for line in (ROOT/'evaluation/questions.jsonl').read_text(encoding='utf-8').splitlines() if line.strip()]
-    cases = [row for row in cases if row['split'] == 'dev']
+    cases = load_cases(args.split)
     selected_range = [args.start_index, args.end_index if args.end_index is not None else len(cases)]
     cases = cases[selected_range[0]:selected_range[1]]
     materials = parse_all_course_files()
@@ -204,7 +213,7 @@ def main():
     # Keep experimental indexing in memory; do not overwrite the application's index.
     retriever._save = lambda _: None
     retriever.build_index(chunks)
-    manifest = {'split':'dev','dev_index_range':selected_range,'test_evaluated':False,
+    manifest = {'split':args.split,'split_index_range':selected_range,'test_evaluated':args.split == 'test',
                 'top_k_anchors':3,'neighbor_window':2,
                 'max_context_chunks':12,'comparison_source_diversity':True,
                 'provider':provider['name'],'base_url':provider['base_url'],'model':provider['model'],

@@ -180,7 +180,15 @@ def main():
     if not key:
         raise SystemExit("DEEPSEEK_API_KEY is missing")
 
-    cases = {row["id"]: row for row in load_jsonl(ROOT / "evaluation/questions.jsonl") if row["split"] == "dev"}
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    split = manifest.get("split")
+    if split not in {"dev", "test"}:
+        raise SystemExit("Run manifest has an invalid split")
+    cases = {
+        row["id"]: row
+        for row in load_jsonl(ROOT / "evaluation/questions.jsonl")
+        if row["split"] == split
+    }
     retrieval = {row["id"]: row for row in load_jsonl(run_dir / "retrieval.jsonl")}
     answers = load_jsonl(run_dir / "answers.jsonl")
     answers_by_id = {case_id: [row for row in answers if row["id"] == case_id] for case_id in cases}

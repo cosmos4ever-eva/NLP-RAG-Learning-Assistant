@@ -56,6 +56,15 @@ python evaluation/validate_dataset.py
 5. 分别报告 dev/test、题目类型和边界题结果。
 6. 至少整理 5 个 Bad Case：问题、检索证据、系统回答、错误类型、修改、复测结果。
 
+冻结 dev 版本后，最终 test 只运行一次：
+
+```powershell
+python evaluation/run_experiment.py --split test --generate --systems llm_only,tfidf_rag,graph_rag --provider deepseek --output evaluation/private_runs/<frozen-test-run>
+python evaluation/score_experiment.py --run-dir evaluation/private_runs/<frozen-test-run> --model deepseek-v4-pro
+```
+
+test 结果只能用于最终报告和未来新版本的整体比较，不能再用于逐题修改当前版本。
+
 ## 证据边界
 
 - `source_evidence` 是定位提示，不是可以直接复制进回答的标准答案。

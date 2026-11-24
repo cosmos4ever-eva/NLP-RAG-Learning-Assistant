@@ -1,9 +1,13 @@
 import unittest
 
-from evaluation.run_experiment import summarize_retrieval
+from evaluation.run_experiment import load_cases, summarize_retrieval
 
 
 class ExperimentSummaryTest(unittest.TestCase):
+    def test_frozen_dataset_has_balanced_splits(self):
+        self.assertEqual(28, len(load_cases("dev")))
+        self.assertEqual(28, len(load_cases("test")))
+
     def test_boundary_only_subset_has_null_rates_instead_of_dividing_by_zero(self):
         rows = [{
             "category": "boundary",
