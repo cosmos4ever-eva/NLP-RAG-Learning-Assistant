@@ -1,0 +1,1361 @@
+{
+  "split": "dev",
+  "test_evaluated": false,
+  "cases": 28,
+  "chunk_count": 516,
+  "max_context_chunks": 12,
+  "dataset_sha256": "090b959400dfda4050f71f9fd00c3cc671a0820778e58b41599cd45d14a20f4f",
+  "retriever_sha256": "e6ac4c6c68fe1e36ab4f201c91eadd8de87c47cc5d8a992e05afb9120e80c8b9",
+  "summaries": {
+    "top3_neighbors0": {
+      "evidence_cases": 24,
+      "anchor_hits": 22,
+      "context_hits": 24,
+      "mean_gold_evidence_recall": 0.42971230158730167,
+      "mean_context_chunks": 3.0,
+      "by_category": {
+        "course_grounded": {
+          "n": 20,
+          "anchor_hits": 19,
+          "context_hits": 20,
+          "mean_gold_evidence_recall": 0.44922619047619056
+        },
+        "cross_concept": {
+          "n": 4,
+          "anchor_hits": 3,
+          "context_hits": 4,
+          "mean_gold_evidence_recall": 0.3321428571428572
+        }
+      }
+    },
+    "top3_neighbors2": {
+      "evidence_cases": 24,
+      "anchor_hits": 22,
+      "context_hits": 24,
+      "mean_gold_evidence_recall": 0.8644841269841269,
+      "mean_context_chunks": 10.821428571428571,
+      "by_category": {
+        "course_grounded": {
+          "n": 20,
+          "anchor_hits": 19,
+          "context_hits": 20,
+          "mean_gold_evidence_recall": 0.8902380952380952
+        },
+        "cross_concept": {
+          "n": 4,
+          "anchor_hits": 3,
+          "context_hits": 4,
+          "mean_gold_evidence_recall": 0.7357142857142858
+        }
+      }
+    },
+    "top5_neighbors0": {
+      "evidence_cases": 24,
+      "anchor_hits": 22,
+      "context_hits": 24,
+      "mean_gold_evidence_recall": 0.5374007936507936,
+      "mean_context_chunks": 5.0,
+      "by_category": {
+        "course_grounded": {
+          "n": 20,
+          "anchor_hits": 19,
+          "context_hits": 20,
+          "mean_gold_evidence_recall": 0.5613095238095238
+        },
+        "cross_concept": {
+          "n": 4,
+          "anchor_hits": 3,
+          "context_hits": 4,
+          "mean_gold_evidence_recall": 0.4178571428571428
+        }
+      }
+    },
+    "top5_neighbors2": {
+      "evidence_cases": 24,
+      "anchor_hits": 22,
+      "context_hits": 24,
+      "mean_gold_evidence_recall": 0.8060515873015874,
+      "mean_context_chunks": 11.892857142857142,
+      "by_category": {
+        "course_grounded": {
+          "n": 20,
+          "anchor_hits": 19,
+          "context_hits": 20,
+          "mean_gold_evidence_recall": 0.8397619047619049
+        },
+        "cross_concept": {
+          "n": 4,
+          "anchor_hits": 3,
+          "context_hits": 4,
+          "mean_gold_evidence_recall": 0.6375
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "neighbors_top3": {
+      "cases_compared": 28,
+      "improved_recall": 22,
+      "regressed_recall": 0,
+      "changed_cases": [
+        {
+          "id": "EVAL-001",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.33333333333333337
+        },
+        {
+          "id": "EVAL-002",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.6000000000000001
+        },
+        {
+          "id": "EVAL-003",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.3333333333333333
+        },
+        {
+          "id": "EVAL-004",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.25
+        },
+        {
+          "id": "EVAL-005",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.4
+        },
+        {
+          "id": "EVAL-007",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.39999999999999997
+        },
+        {
+          "id": "EVAL-008",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.75
+        },
+        {
+          "id": "EVAL-009",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.25
+        },
+        {
+          "id": "EVAL-010",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.25
+        },
+        {
+          "id": "EVAL-011",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.4285714285714286
+        },
+        {
+          "id": "EVAL-012",
+          "anchor_hit_before": false,
+          "anchor_hit_after": false,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.2857142857142857
+        },
+        {
+          "id": "EVAL-013",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.6666666666666667
+        },
+        {
+          "id": "EVAL-014",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.5
+        },
+        {
+          "id": "EVAL-015",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.6
+        },
+        {
+          "id": "EVAL-016",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.625
+        },
+        {
+          "id": "EVAL-017",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.5
+        },
+        {
+          "id": "EVAL-018",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.6666666666666667
+        },
+        {
+          "id": "EVAL-019",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.6
+        },
+        {
+          "id": "EVAL-020",
+          "anchor_hit_before": false,
+          "anchor_hit_after": false,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.42857142857142855
+        },
+        {
+          "id": "EVAL-051",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.6666666666666667
+        },
+        {
+          "id": "EVAL-053",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.5
+        },
+        {
+          "id": "EVAL-055",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": 0.4
+        }
+      ]
+    },
+    "top5_with_neighbors": {
+      "cases_compared": 28,
+      "improved_recall": 0,
+      "regressed_recall": 7,
+      "changed_cases": [
+        {
+          "id": "EVAL-008",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.25
+        },
+        {
+          "id": "EVAL-010",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.25
+        },
+        {
+          "id": "EVAL-012",
+          "anchor_hit_before": false,
+          "anchor_hit_after": false,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.14285714285714285
+        },
+        {
+          "id": "EVAL-017",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.16666666666666663
+        },
+        {
+          "id": "EVAL-019",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.19999999999999996
+        },
+        {
+          "id": "EVAL-020",
+          "anchor_hit_before": false,
+          "anchor_hit_after": false,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.14285714285714285
+        },
+        {
+          "id": "EVAL-053",
+          "anchor_hit_before": true,
+          "anchor_hit_after": true,
+          "context_hit_before": true,
+          "context_hit_after": true,
+          "gold_evidence_recall_delta": -0.25
+        }
+      ]
+    }
+  },
+  "rows": {
+    "top3_neighbors0": [
+      {
+        "id": "EVAL-001",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6666666666666666,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-002",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.2,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-003",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-004",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.75,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-005",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-006",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-007",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.2,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-008",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.25,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-009",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.75,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-010",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.25,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-011",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.2857142857142857,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-012",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.14285714285714285,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-013",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-014",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-015",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.4,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-016",
+        "category": "course_grounded",
+        "gold_pages": 8,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.375,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-017",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.16666666666666666,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-018",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-019",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.4,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-020",
+        "category": "course_grounded",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.14285714285714285,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-045",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-046",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-047",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-048",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-049",
+        "category": "course_grounded",
+        "gold_pages": 2,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-051",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-053",
+        "category": "cross_concept",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 3
+      },
+      {
+        "id": "EVAL-055",
+        "category": "cross_concept",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.4,
+        "context_chunks": 3
+      }
+    ],
+    "top3_neighbors2": [
+      {
+        "id": "EVAL-001",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 8
+      },
+      {
+        "id": "EVAL-002",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.8,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-003",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6666666666666666,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-004",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 7
+      },
+      {
+        "id": "EVAL-005",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 8
+      },
+      {
+        "id": "EVAL-006",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 7
+      },
+      {
+        "id": "EVAL-007",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-008",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-009",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 7
+      },
+      {
+        "id": "EVAL-010",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 10
+      },
+      {
+        "id": "EVAL-011",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.7142857142857143,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-012",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.42857142857142855,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-013",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 11
+      },
+      {
+        "id": "EVAL-014",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 9
+      },
+      {
+        "id": "EVAL-015",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 10
+      },
+      {
+        "id": "EVAL-016",
+        "category": "course_grounded",
+        "gold_pages": 8,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 10
+      },
+      {
+        "id": "EVAL-017",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6666666666666666,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-018",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-019",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-020",
+        "category": "course_grounded",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5714285714285714,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-045",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-046",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-047",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-048",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-049",
+        "category": "course_grounded",
+        "gold_pages": 2,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-051",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-053",
+        "category": "cross_concept",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-055",
+        "category": "cross_concept",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.8,
+        "context_chunks": 12
+      }
+    ],
+    "top5_neighbors0": [
+      {
+        "id": "EVAL-001",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6666666666666666,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-002",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.4,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-003",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-004",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-005",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-006",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-007",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.4,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-008",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.25,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-009",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.75,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-010",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.25,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-011",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.42857142857142855,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-012",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.14285714285714285,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-013",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-014",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-015",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-016",
+        "category": "course_grounded",
+        "gold_pages": 8,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-017",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.16666666666666666,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-018",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-019",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-020",
+        "category": "course_grounded",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.14285714285714285,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-045",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-046",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-047",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-048",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-049",
+        "category": "course_grounded",
+        "gold_pages": 2,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-051",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.3333333333333333,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-053",
+        "category": "cross_concept",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 5
+      },
+      {
+        "id": "EVAL-055",
+        "category": "cross_concept",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6,
+        "context_chunks": 5
+      }
+    ],
+    "top5_neighbors2": [
+      {
+        "id": "EVAL-001",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-002",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.8,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-003",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6666666666666666,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-004",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-005",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 10
+      },
+      {
+        "id": "EVAL-006",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-007",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.6,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-008",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.75,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-009",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 11
+      },
+      {
+        "id": "EVAL-010",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.25,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-011",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.7142857142857143,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-012",
+        "category": "cross_concept",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.2857142857142857,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-013",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-014",
+        "category": "course_grounded",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-015",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-016",
+        "category": "course_grounded",
+        "gold_pages": 8,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-017",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.5,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-018",
+        "category": "course_grounded",
+        "gold_pages": 6,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-019",
+        "category": "course_grounded",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.8,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-020",
+        "category": "course_grounded",
+        "gold_pages": 7,
+        "anchor_hit": false,
+        "context_hit": true,
+        "gold_evidence_recall": 0.42857142857142855,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-045",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-046",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-047",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-048",
+        "category": "boundary",
+        "gold_pages": 0,
+        "anchor_hit": null,
+        "context_hit": null,
+        "gold_evidence_recall": 0.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-049",
+        "category": "course_grounded",
+        "gold_pages": 2,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-051",
+        "category": "course_grounded",
+        "gold_pages": 3,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 1.0,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-053",
+        "category": "cross_concept",
+        "gold_pages": 4,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.75,
+        "context_chunks": 12
+      },
+      {
+        "id": "EVAL-055",
+        "category": "cross_concept",
+        "gold_pages": 5,
+        "anchor_hit": true,
+        "context_hit": true,
+        "gold_evidence_recall": 0.8,
+        "context_chunks": 12
+      }
+    ]
+  }
+}

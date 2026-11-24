@@ -4,6 +4,10 @@
 """
 import re
 import os
+import json
+import posixpath
+import xml.etree.ElementTree as ET
+from zipfile import ZipFile
 from pathlib import Path
 from pypdf import PdfReader
 
@@ -13,6 +17,7 @@ from shared.schemas import ChunkItem
 # 项目根目录（backend/ 的上级）
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 COURSE_MATERIALS_DIR = PROJECT_ROOT / "course_materials"
+MANUAL_SUMMARIES_PATH = COURSE_MATERIALS_DIR / "manual_page_summaries.json"
 
 # chunk 目标大小（字符数）
 CHUNK_MIN = 150
@@ -23,7 +28,65 @@ def list_course_files() -> list[Path]:
     """列出 course_materials/ 下所有 PDF 文件"""
     if not COURSE_MATERIALS_DIR.exists():
         return []
-    return sorted(COURSE_MATERIALS_DIR.glob("*.pdf"))
+    return sorted(p for p in COURSE_MATERIALS_DIR.iterdir()
+                  if p.is_file() and p.suffix.lower() in {'.pdf', '.pptx'})
+
+
+def extract_text_from_pptx(file_path: Path) -> tuple[str, list[dict]]:
+    """Read slide text in presentation order, preserving slide numbers.
+
+    Image-only slides require OCR and are intentionally not invented here.
+    """
+    ns = {'p': 'http://schemas.openxmlformats.org/presentationml/2006/main',
+          'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
+          'r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}
+    pages = []
+    with ZipFile(file_path) as archive:
+        rels = ET.fromstring(archive.read('ppt/_rels/presentation.xml.rels'))
+        targets = {r.attrib['Id']: r.attrib['Target'] for r in rels
+                   if r.attrib.get('TargetMode') != 'External'}
+        root = ET.fromstring(archive.read('ppt/presentation.xml'))
+        for page, slide in enumerate(root.findall('p:sldIdLst/p:sldId', ns), 1):
+            target = targets[slide.attrib['{' + ns['r'] + '}id']]
+            part = target.lstrip('/') if target.startswith('/') else posixpath.normpath('ppt/' + target)
+            xml = ET.fromstring(archive.read(part))
+            paragraphs = [''.join(t.text or '' for t in p.findall('.//a:t', ns))
+                          for p in xml.findall('.//a:p', ns)]
+            text = clean_text('\n'.join(paragraphs))
+            if text:
+                pages.append({'page': page, 'text': text})
+    return '\n\n'.join(p['text'] for p in pages), pages
+
+
+def extract_document(file_path: Path):
+    if file_path.suffix.lower() == '.pptx':
+        _, pages = extract_text_from_pptx(file_path)
+    elif file_path.suffix.lower() == '.pdf':
+        _, pages = extract_text_from_pdf(file_path)
+    else:
+        raise ValueError('Unsupported course document format: ' + file_path.suffix)
+    pages = _apply_manual_page_summaries(file_path, pages)
+    return '\n\n'.join(page['text'] for page in pages), pages
+
+
+def _apply_manual_page_summaries(file_path: Path, pages: list[dict]) -> list[dict]:
+    """Append reviewed descriptions for diagrams that PDF text extraction cannot see."""
+    if not MANUAL_SUMMARIES_PATH.exists():
+        return pages
+    with open(MANUAL_SUMMARIES_PATH, encoding="utf-8") as handle:
+        summaries = json.load(handle).get(file_path.name, {})
+    if not summaries:
+        return pages
+
+    by_page = {page["page"]: dict(page) for page in pages}
+    for page_number, summary in summaries.items():
+        page = int(page_number)
+        existing = by_page.get(page, {"page": page, "text": ""})
+        existing["text"] = clean_text(
+            "\n\n".join(part for part in (existing["text"], summary) if part)
+        )
+        by_page[page] = existing
+    return [by_page[page] for page in sorted(by_page)]
 
 
 def extract_text_from_pdf(file_path: Path) -> tuple[str, list[dict]]:
@@ -144,7 +207,7 @@ def parse_all_course_files() -> dict:
         # 简化文件名作为 source 标识
         source_short = source_short.replace(" ", "_")[:50]
 
-        full_text, pages_text = extract_text_from_pdf(file_path)
+        full_text, pages_text = extract_document(file_path)
 
         all_chunks = []
         for page_info in pages_text:
@@ -170,7 +233,7 @@ def parse_single_file(file_path: Path) -> dict:
     """解析单个 PDF 文件"""
     source_short = file_path.stem.replace(" ", "_")[:50]
 
-    full_text, pages_text = extract_text_from_pdf(file_path)
+    full_text, pages_text = extract_document(file_path)
 
     all_chunks = []
     for page_info in pages_text:

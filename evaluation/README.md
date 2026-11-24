@@ -8,7 +8,7 @@
 
 ## 文件
 
-- `questions.jsonl`：48 个带金标准的问题。
+- `questions.jsonl`：56 个带金标准的问题，dev/test 各 28 个。
 - `rubric.md`：人工评分与汇总规则。
 - `annotations_template.csv`：人工标注记录模板。
 - `validate_dataset.py`：结构、编号、证据定位和图谱关系校验。
@@ -17,11 +17,17 @@
 
 题目分为三组：
 
-1. `course_grounded`：答案应由当前仓库中的 L2、L6、L8 课程资料支持。
+1. `course_grounded`：答案应由当前仓库中的 L2-L8 课程资料支持。
 2. `cross_concept`：需要组合多个课件页或知识图谱关系，不能只复述一个片段。
 3. `boundary`：当前课程资料和知识图谱不足以回答，系统应明确说明证据不足，而不是依赖模型常识扩写。
 
 `dev` 用于调试检索、提示词和图谱逻辑；`test` 只用于冻结版本后的最终比较。不要根据 `test` 的金标准逐题调参。
+
+`DEV_EVALUATION_20261123.md` 是扩充前 24 条 dev 的历史快照。加入 L3、L4、L5、L7 后，新的 dev 有 28 条；旧报告中的比例不能直接当作新数据集结果，必须重新运行实验。
+
+`DEV_ITERATION_20261124.md` 汇总了扩充后 28 条 dev 的有效基线、top-k/邻页敏感性实验、上下文补图迭代和最新 Graph-RAG-only 复测。确定性敏感性明细保存在 `retrieval_sensitivity_dev_20261124.json`；其中不包含课程原文。原始回答和检索片段仍只保存在被忽略的 `private_runs/`。
+
+`repeat_stability_dev_20261124.json` 汇总三轮 Graph-RAG dev 重复实验的均值、波动、token、延迟和逐题分数稳定性，不包含回答正文。可用 `analyze_repeats.py` 对新的重复运行目录重新生成。
 
 ## 建议比较的系统
 
@@ -32,6 +38,8 @@
 3. `graph_rag`：提供相同 top-k 课程片段及知识图谱关系。
 
 推荐固定 `top_k=3` 作为主结果，再用 `top_k=5` 做敏感性检查。所有调用保存模型名称、时间、prompt版本、响应和耗时。
+
+生成器支持 `--provider ecnu` 和 `--provider deepseek`。DeepSeek 批量评测默认使用 `deepseek-flash`、关闭思考模式，并从 `DEEPSEEK_API_KEY` 读取密钥；三个对照系统必须使用同一供应商和模型。`deepseek-flash` 的非思考模式温度由服务端固定，因此实验清单将 `temperature` 记录为 `null`，不把未生效的温度参数写成受控变量。
 
 ## 运行顺序
 

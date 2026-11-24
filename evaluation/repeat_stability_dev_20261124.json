@@ -1,0 +1,129 @@
+{
+  "split": "dev",
+  "test_evaluated": false,
+  "system": "graph_rag",
+  "runs": [
+    {
+      "run": "graph_context_seed_v3_answers_dev_20261124",
+      "answer_mean": 11.333333333333334,
+      "all_case_raw_judge_mean": 9.714285714285714,
+      "total_tokens": 54925,
+      "mean_latency_seconds": 4.7521713142923545
+    },
+    {
+      "run": "graph_context_seed_v3_repeat2_dev_20261124",
+      "answer_mean": 10.958333333333334,
+      "all_case_raw_judge_mean": 9.392857142857142,
+      "total_tokens": 55491,
+      "mean_latency_seconds": 4.91331898928703
+    },
+    {
+      "run": "graph_context_seed_v3_repeat3_dev_20261124",
+      "answer_mean": 11.333333333333334,
+      "all_case_raw_judge_mean": 9.714285714285714,
+      "total_tokens": 55628,
+      "mean_latency_seconds": 4.799430421424664
+    }
+  ],
+  "answer_mean_across_runs": 11.208333333333334,
+  "answer_mean_sample_sd": 0.21650635094610965,
+  "answer_mean_range": [
+    10.958333333333334,
+    11.333333333333334
+  ],
+  "identical_answers_across_all_runs": 0,
+  "cases": 28,
+  "score_unstable_cases": 9,
+  "unstable": [
+    {
+      "id": "EVAL-010",
+      "category": "course_grounded",
+      "scores": [
+        10,
+        6,
+        6
+      ],
+      "range": 4
+    },
+    {
+      "id": "EVAL-003",
+      "category": "course_grounded",
+      "scores": [
+        9,
+        10,
+        12
+      ],
+      "range": 3
+    },
+    {
+      "id": "EVAL-006",
+      "category": "course_grounded",
+      "scores": [
+        10,
+        12,
+        11
+      ],
+      "range": 2
+    },
+    {
+      "id": "EVAL-012",
+      "category": "cross_concept",
+      "scores": [
+        10,
+        10,
+        12
+      ],
+      "range": 2
+    },
+    {
+      "id": "EVAL-017",
+      "category": "course_grounded",
+      "scores": [
+        12,
+        10,
+        10
+      ],
+      "range": 2
+    },
+    {
+      "id": "EVAL-018",
+      "category": "course_grounded",
+      "scores": [
+        12,
+        10,
+        12
+      ],
+      "range": 2
+    },
+    {
+      "id": "EVAL-020",
+      "category": "course_grounded",
+      "scores": [
+        10,
+        8,
+        10
+      ],
+      "range": 2
+    },
+    {
+      "id": "EVAL-004",
+      "category": "course_grounded",
+      "scores": [
+        10,
+        9,
+        10
+      ],
+      "range": 1
+    },
+    {
+      "id": "EVAL-009",
+      "category": "course_grounded",
+      "scores": [
+        12,
+        11,
+        12
+      ],
+      "range": 1
+    }
+  ]
+}

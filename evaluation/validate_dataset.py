@@ -21,7 +21,11 @@ ALLOWED_DIFFICULTIES = {"easy", "medium", "hard"}
 ALLOWED_BEHAVIORS = {"answer", "abstain"}
 ALLOWED_SOURCES = {
     "CS-NLP-L2 Text Preprocession.pptx": ("slide", 60),
+    "CS-NLP-L3-ngram Language Model.pdf": ("page", 87),
+    "CS-NLP-L4-Text classification.pdf": ("page", 63),
+    "CS-NLP-L5-Logistic Regression.pdf": ("page", 37),
     "CS-NLP-L6-Word embedding.pdf": ("page", 59),
+    "CS-NLP-L7-Word2Vec.pdf": ("page", 43),
     "CS-NLP-L8-Sequence Models.pdf": ("page", 81),
 }
 REQUIRED_FIELDS = {

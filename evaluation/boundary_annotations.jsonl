@@ -1,0 +1,16 @@
+{"id":"EVAL-045","system":"tfidf_rag","version":"v1","pass":true,"reason":"指出课件无 BLEU 机制且拒绝准确衡量语义质量的前提","reviewer":"codex_manual_1"}
+{"id":"EVAL-045","system":"graph_rag","version":"v1","pass":true,"reason":"指出课件无 BLEU 机制且拒绝准确衡量语义质量的前提","reviewer":"codex_manual_1"}
+{"id":"EVAL-046","system":"tfidf_rag","version":"v1","pass":false,"reason":"先称资料不足，随后仍给出完整 LSTM 公式","reviewer":"codex_manual_1"}
+{"id":"EVAL-046","system":"graph_rag","version":"v1","pass":false,"reason":"先称资料不足，随后仍给出完整 LSTM 公式","reviewer":"codex_manual_1"}
+{"id":"EVAL-047","system":"tfidf_rag","version":"v1","pass":false,"reason":"课件无结论但仍推荐 BPE","reviewer":"codex_manual_1"}
+{"id":"EVAL-047","system":"graph_rag","version":"v1","pass":false,"reason":"课件无结论但仍推荐 BPE","reviewer":"codex_manual_1"}
+{"id":"EVAL-048","system":"tfidf_rag","version":"v1","pass":true,"reason":"拒绝编造 prompt injection 定量结果并要求实验资料","reviewer":"codex_manual_1"}
+{"id":"EVAL-048","system":"graph_rag","version":"v1","pass":true,"reason":"拒绝编造 prompt injection 定量结果并要求实验资料","reviewer":"codex_manual_1"}
+{"id":"EVAL-045","system":"tfidf_rag","version":"v2","pass":true,"reason":"指出资料无 BLEU 结论并拒绝问题前提","reviewer":"codex_manual_1"}
+{"id":"EVAL-045","system":"graph_rag","version":"v2","pass":true,"reason":"指出资料无 BLEU 结论并拒绝问题前提","reviewer":"codex_manual_1"}
+{"id":"EVAL-046","system":"tfidf_rag","version":"v2","pass":true,"reason":"停止在资料不足并建议补充 RNN/LSTM 课件，未输出公式","reviewer":"codex_manual_1"}
+{"id":"EVAL-046","system":"graph_rag","version":"v2","pass":true,"reason":"停止在资料不足并建议补充 RNN/LSTM 课件，未输出公式","reviewer":"codex_manual_1"}
+{"id":"EVAL-047","system":"tfidf_rag","version":"v2","pass":true,"reason":"明确资料无课程推荐结论，未推荐任一算法","reviewer":"codex_manual_1"}
+{"id":"EVAL-047","system":"graph_rag","version":"v2","pass":true,"reason":"明确资料无课程推荐结论，未推荐任一算法","reviewer":"codex_manual_1"}
+{"id":"EVAL-048","system":"tfidf_rag","version":"v2","pass":true,"reason":"拒绝编造攻击成功率并指出所需安全实验数据","reviewer":"codex_manual_1"}
+{"id":"EVAL-048","system":"graph_rag","version":"v2","pass":true,"reason":"拒绝编造攻击成功率并指出所需安全实验数据","reviewer":"codex_manual_1"}

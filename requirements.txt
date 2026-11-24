@@ -1,0 +1,24 @@
+﻿# Web backend
+fastapi==0.115.6
+uvicorn==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+
+# Frontend
+streamlit==1.41.1
+pandas==2.2.3
+requests==2.32.3
+
+# Course material parsing
+pypdf==5.1.0
+python-pptx==1.0.2
+
+# Chinese text processing and TF-IDF retrieval
+jieba==0.42.1
+numpy==2.1.3
+scipy==1.14.1
+scikit-learn==1.5.2
+
+# Knowledge graph and visualization
+networkx==3.4.2
+pyvis==0.3.2

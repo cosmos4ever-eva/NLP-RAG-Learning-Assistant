@@ -69,6 +69,7 @@ class SearchResult(BaseModel):
     """单条检索结果"""
     chunk: ChunkItem
     similarity: float
+    retrieval_reason: str = "semantic"  # semantic / neighbor
 
 
 class SearchResponse(BaseModel):

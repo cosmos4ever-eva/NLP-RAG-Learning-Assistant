@@ -1,8 +1,9 @@
-"""
+﻿"""
 课程资料解析模块
 负责: PDF/PPT 文本提取 → 清洗 → chunk 切分 → 来源标注
 """
 import os
+import tempfile
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
@@ -57,7 +58,8 @@ async def upload_and_parse(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="仅支持 PDF 文件")
 
     # 保存临时文件
-    tmp_path = Path(f"/tmp/{file.filename}")
+    safe_filename = Path(file.filename).name
+    tmp_path = Path(tempfile.gettempdir()) / safe_filename
     try:
         content = await file.read()
         with open(tmp_path, "wb") as f:

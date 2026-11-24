@@ -27,7 +27,8 @@ class KnowledgeGraph:
     """NLP 课程知识图谱"""
 
     def __init__(self, triples_path: Path = TRIPLES_PATH):
-        self.graph = nx.DiGraph()
+        # Preserve multiple semantic relations between the same ordered pair.
+        self.graph = nx.MultiDiGraph()
         self.entities: dict[str, dict] = {}  # id -> entity info
         self.triples: list[dict] = []
         self._load(triples_path)
@@ -90,6 +91,7 @@ class KnowledgeGraph:
             return []
 
         neighbors = []
+        seen_triples = set()
         # 使用 BFS 获取指定深度的邻居
         seen = {entity}
         frontier = {entity}
@@ -99,24 +101,30 @@ class KnowledgeGraph:
             for node in frontier:
                 # 出边
                 for _, tail, data in self.graph.out_edges(node, data=True):
-                    if tail not in seen:
-                        seen.add(tail)
-                        next_frontier.add(tail)
+                    key = (node, data["relation"], tail)
+                    if key not in seen_triples:
+                        seen_triples.add(key)
                         neighbors.append({
                             "head": node,
                             "relation": data["relation"],
                             "tail": tail,
                         })
+                    if tail not in seen:
+                        seen.add(tail)
+                        next_frontier.add(tail)
                 # 入边
                 for head, _, data in self.graph.in_edges(node, data=True):
-                    if head not in seen:
-                        seen.add(head)
-                        next_frontier.add(head)
+                    key = (head, data["relation"], node)
+                    if key not in seen_triples:
+                        seen_triples.add(key)
                         neighbors.append({
                             "head": head,
                             "relation": data["relation"],
                             "tail": node,
                         })
+                    if head not in seen:
+                        seen.add(head)
+                        next_frontier.add(head)
             frontier = next_frontier
 
         return neighbors

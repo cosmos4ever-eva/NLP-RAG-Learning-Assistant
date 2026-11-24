@@ -5,6 +5,7 @@
 """
 import json
 import pickle
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -22,12 +23,48 @@ INDEX_DIR.mkdir(exist_ok=True)
 CHUNKS_PATH = INDEX_DIR / "chunks.json"
 VECTORIZER_PATH = INDEX_DIR / "vectorizer.pkl"
 TFIDF_MATRIX_PATH = INDEX_DIR / "tfidf_matrix.npy"
+LEXICAL_COVERAGE_WEIGHT = 0.35
+
+# 这些词对“用户在问什么”有帮助，但对“答案在哪一页”没有区分度。
+# 只在查询侧过滤，课程原文和索引保持不变。
+QUERY_STOPWORDS = {
+    "什么", "其中", "请问", "请", "为什么", "如何", "怎么", "怎样",
+    "哪些", "分别", "各自", "是否", "有什么", "课程", "课件", "资料",
+    "需要", "给出", "一种", "典型", "系统", "还要", "信息",
+}
+
+QUERY_EXPANSIONS = {
+    "不足": ("不够",),
+    "保存": ("记录", "记住", "来源", "回溯"),
+}
 
 
 def _jieba_tokenizer(text: str) -> list[str]:
     """jieba 中文分词器（模块级函数，保证可序列化）"""
     tokens = jieba.lcut(text)
     return [t.strip() for t in tokens if t.strip() and len(t.strip()) > 1]
+
+
+def _prepare_query(text: str) -> str:
+    """删除低信息问句词，保留真正决定证据位置的概念词。"""
+    tokens = _jieba_tokenizer(text)
+    informative = [token for token in tokens if token.casefold() not in QUERY_STOPWORDS]
+    # 当问题已有更具体的处理步骤时，去掉过宽的父概念，避免总命中目录页。
+    if any(term in text for term in ("归一化", "词干", "词形", "分词", "停用词")):
+        informative = [
+            token for token in informative
+            if token not in {"文本预处理", "文本", "预处理"}
+        ]
+    for phrase, expansions in QUERY_EXPANSIONS.items():
+        if phrase in text:
+            informative.extend(expansions)
+    return " ".join(informative) or text
+
+
+def _query_clauses(text: str) -> list[str]:
+    """把多问句拆开，避免第一小问的高频词淹没后续证据。"""
+    clauses = [part.strip() for part in re.split(r"[？?；;。]+", text)]
+    return [part for part in clauses if len(_prepare_query(part)) >= 2]
 
 
 class VectorRetriever:
@@ -98,11 +135,25 @@ class VectorRetriever:
         if not self._built or self.vectorizer is None:
             raise RuntimeError("索引未构建，请先调用 POST /api/search/build_index")
 
+        prepared_query = _prepare_query(query)
         # query → TF-IDF 向量
-        query_vec = self.vectorizer.transform([query])
+        query_vec = self.vectorizer.transform([prepared_query])
 
         # 余弦相似度
-        sims = cosine_similarity(query_vec, self.tfidf_matrix)[0]
+        cosine_scores = cosine_similarity(query_vec, self.tfidf_matrix)[0]
+        query_terms = set(_jieba_tokenizer(prepared_query))
+        if query_terms:
+            coverage_scores = np.array([
+                sum(term.casefold() in chunk.text.casefold() for term in query_terms)
+                / len(query_terms)
+                for chunk in self.chunks
+            ])
+            sims = (
+                (1 - LEXICAL_COVERAGE_WEIGHT) * cosine_scores
+                + LEXICAL_COVERAGE_WEIGHT * coverage_scores
+            )
+        else:
+            sims = cosine_scores
 
         # top-k 索引
         top_indices = np.argsort(sims)[::-1][:top_k]
@@ -115,6 +166,95 @@ class VectorRetriever:
                     chunk=chunk,
                     similarity=round(float(sims[idx]), 4),
                 ))
+
+        return results
+
+    def search_context(
+        self,
+        query: str,
+        top_k: int = 3,
+        neighbor_window: int = 2,
+        max_context_chunks: int = 12,
+        max_neighbor_chunks_per_page: int = 1,
+    ) -> list[SearchResult]:
+        """Retrieve semantic anchors, then add slide context around them.
+
+        Comparison questions reserve one anchor for another source when the
+        ordinary top-k is monopolized by a single document. Nearby slides are
+        labeled separately so callers do not confuse context expansion with a
+        semantic match.
+        """
+        if not self._built or self.vectorizer is None:
+            raise RuntimeError("索引未构建，请先调用 POST /api/search/build_index")
+        if top_k <= 0:
+            return []
+
+        candidate_count = max(top_k * 4, 12)
+        candidates = self.search(query, top_k=candidate_count)
+        clauses = _query_clauses(query)
+        anchors = []
+        if len(clauses) > 1:
+            # 每个小问至少保留一个语义锚点，再用整句结果补足。
+            for clause in clauses:
+                clause_results = self.search(clause, top_k=3)
+                alternative = next(
+                    (
+                        result for result in clause_results
+                        if result.chunk.chunk_id not in {item.chunk.chunk_id for item in anchors}
+                    ),
+                    None,
+                )
+                if alternative is not None:
+                    anchors.append(alternative)
+                if len(anchors) >= top_k:
+                    break
+        for candidate in candidates:
+            if len(anchors) >= top_k:
+                break
+            if candidate.chunk.chunk_id not in {item.chunk.chunk_id for item in anchors}:
+                anchors.append(candidate)
+        comparison_query = bool(re.search(r"(区别|不同|比较|对比|关系)", query))
+        if comparison_query and top_k >= 2 and anchors:
+            anchor_sources = {result.chunk.source for result in anchors}
+            if len(anchor_sources) == 1:
+                alternative = next(
+                    (result for result in candidates if result.chunk.source not in anchor_sources),
+                    None,
+                )
+                if alternative is not None:
+                    anchors[-1] = alternative
+
+        results = []
+        seen = set()
+        for anchor in anchors:
+            seen.add(anchor.chunk.chunk_id)
+            results.append(anchor.model_copy(update={"retrieval_reason": "semantic"}))
+
+        neighbors = []
+        for anchor_rank, anchor in enumerate(anchors):
+            for chunk in self.chunks:
+                distance = abs(chunk.page - anchor.chunk.page)
+                if (
+                    chunk.source == anchor.chunk.source
+                    and 0 < distance <= neighbor_window
+                    and chunk.chunk_id not in seen
+                ):
+                    neighbors.append((distance, anchor_rank, chunk.page, chunk))
+
+        page_counts = {}
+        for _, anchor_rank, _, chunk in sorted(neighbors, key=lambda item: item[:3]):
+            page_key = (chunk.source, chunk.page)
+            if chunk.chunk_id in seen or len(results) >= max_context_chunks:
+                continue
+            if page_counts.get(page_key, 0) >= max_neighbor_chunks_per_page:
+                continue
+            seen.add(chunk.chunk_id)
+            page_counts[page_key] = page_counts.get(page_key, 0) + 1
+            results.append(SearchResult(
+                chunk=chunk,
+                similarity=0.0,
+                retrieval_reason="neighbor",
+            ))
 
         return results
 
