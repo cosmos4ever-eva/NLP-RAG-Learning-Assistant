@@ -1430,7 +1430,7 @@ with st.sidebar:
             show_error(exc)
 
 
-tab_labels = ["智能问答", "自动出题与答题", "错题本", "概念对比", "学习路径", "知识覆盖度", "学习诊断报告"]
+tab_labels = ["学习Agent", "智能问答", "自动出题与答题", "错题本", "概念对比", "学习路径", "知识覆盖度", "学习诊断报告"]
 qa_concept = st.query_params.get("qa_concept")
 if qa_concept:
     st.session_state["qa_question_input"] = f"请解释一下「{qa_concept}」这个知识点。"
@@ -1448,6 +1448,83 @@ active_tab = st.radio(
     horizontal=True,
     label_visibility="collapsed",
 )
+
+
+if active_tab == "学习Agent":
+    st.subheader("NLP课程学习Agent")
+    st.caption(
+        "输入一个学习目标，Planner会在课程问答、概念对比、学习路径、自动出题、"
+        "学习诊断和Todo工具之间动态规划，并展示完整执行轨迹。"
+    )
+    st.session_state.setdefault(
+        "agent_goal_input",
+        "先解释Word2Vec和CBOW的关系，再为我生成两道练习题。",
+    )
+    agent_goal = st.text_area(
+        "学习目标",
+        key="agent_goal_input",
+        height=110,
+    )
+    max_steps = st.slider("最大执行步数", min_value=1, max_value=8, value=4)
+
+    if st.button("运行学习Agent", type="primary", key="run_learning_agent"):
+        payload = {"goal": agent_goal, "max_steps": max_steps}
+        if st.session_state.get("learning_agent_session_id"):
+            payload["session_id"] = st.session_state["learning_agent_session_id"]
+        try:
+            with st.spinner("Planner正在规划并调用学习工具..."):
+                st.session_state["learning_agent_result"] = post_json(
+                    "/api/agent/run",
+                    payload,
+                )
+            session_id = st.session_state["learning_agent_result"].get("session_id")
+            if session_id:
+                st.session_state["learning_agent_session_id"] = session_id
+        except Exception as exc:
+            show_error(exc)
+
+    agent_result = st.session_state.get("learning_agent_result")
+    if agent_result:
+        status = agent_result.get("status", "failed")
+        status_text = {
+            "completed": "已完成",
+            "max_steps": "达到最大步数",
+            "failed": "执行失败",
+        }.get(status, status)
+        st.markdown("### Agent结果")
+        if status == "completed":
+            st.success(status_text)
+        else:
+            st.warning(status_text)
+        st.write(agent_result.get("final_answer", ""))
+
+        next_actions = agent_result.get("next_actions", [])
+        if next_actions:
+            st.markdown("**下一步行动**")
+            for action in next_actions:
+                st.markdown(f"- {action}")
+
+        tool_calls = agent_result.get("tool_calls", [])
+        st.markdown("### Tool Calling轨迹")
+        if tool_calls:
+            rows = [
+                {
+                    "步骤": item.get("step"),
+                    "工具": item.get("tool", ""),
+                    "状态": item.get("status", ""),
+                    "错误": item.get("error", ""),
+                }
+                for item in tool_calls
+            ]
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            with st.expander("查看工具参数与Observation"):
+                st.json(tool_calls)
+        else:
+            st.info("本次目标由Planner直接完成，没有调用外部工具。")
+
+        trace = agent_result.get("trace", [])
+        with st.expander("查看Planner–Executor完整Trace"):
+            st.dataframe(pd.DataFrame(trace), use_container_width=True, hide_index=True)
 
 
 if active_tab == "智能问答":

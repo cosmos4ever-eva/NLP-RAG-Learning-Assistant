@@ -239,44 +239,78 @@ def evaluate_evidence(search_results, kg_triples: list[dict]) -> dict:
     }
 
 
-def call_ecnu_gpt(prompt: str) -> str:
-    api_key = os.getenv("ECNUGPT_API_KEY", "").strip()
-    if not api_key:
-        raise HTTPException(
-            status_code=500,
-            detail="缺少环境变量 ECNUGPT_API_KEY，请先在启动后端的终端中设置 API Key。",
-        )
+def resolve_generation_provider(provider_name: str | None = None) -> dict[str, str]:
+    requested = (provider_name or os.getenv("LEARNING_MODEL_PROVIDER", "")).strip().lower()
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+    ecnu_key = os.getenv("ECNUGPT_API_KEY", "").strip()
+    if not requested:
+        requested = "deepseek" if deepseek_key else "ecnu"
 
-    url = f"{ECNUGPT_BASE_URL}/chat/completions"
+    if requested == "deepseek":
+        if not deepseek_key:
+            raise HTTPException(status_code=500, detail="缺少环境变量DEEPSEEK_API_KEY。")
+        return {
+            "name": "deepseek",
+            "base_url": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/"),
+            "model": os.getenv("DEEPSEEK_MODEL", "deepseek-flash"),
+            "api_key": deepseek_key,
+        }
+
+    if requested == "ecnu":
+        if not ecnu_key:
+            raise HTTPException(status_code=500, detail="缺少环境变量ECNUGPT_API_KEY。")
+        return {
+            "name": "ecnu",
+            "base_url": ECNUGPT_BASE_URL,
+            "model": os.getenv("ECNUGPT_MODEL", ECNUGPT_MODEL),
+            "api_key": ecnu_key,
+        }
+
+    raise HTTPException(status_code=500, detail=f"不支持的生成模型供应商：{requested}")
+
+
+def call_ecnu_gpt(prompt: str, provider_name: str | None = None) -> str:
+    """Call the configured learning model; name retained for module compatibility."""
+    provider = resolve_generation_provider(provider_name)
+    url = f"{provider['base_url']}/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {provider['api_key']}",
     }
     payload = {
-        "model": ECNUGPT_MODEL,
+        "model": provider["model"],
         "stream": False,
         "messages": [
             {
                 "role": "system",
-                "content": "你是华东师范大学大模型 ChatECNU，也是一个专业、耐心、清晰的 NLP 课程教学助手。",
+                "content": "你是一个专业、耐心、清晰的NLP课程教学助手。",
             },
             {
                 "role": "user",
                 "content": prompt,
             },
         ],
-        "temperature": 0.3,
     }
+    if provider["name"] == "deepseek" and provider["model"] == "deepseek-flash":
+        payload["thinking"] = {"type": "disabled"}
+    else:
+        payload["temperature"] = 0.3
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=120)
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"ECNUgpt 请求失败: {exc}") from exc
+        raise HTTPException(
+            status_code=502,
+            detail=f"{provider['name']}模型请求失败: {exc}",
+        ) from exc
 
     if response.status_code != 200:
         raise HTTPException(
             status_code=502,
-            detail=f"ECNUgpt 调用失败，状态码: {response.status_code}，返回: {response.text}",
+            detail=(
+                f"{provider['name']}模型调用失败，状态码: {response.status_code}，"
+                f"返回: {response.text}"
+            ),
         )
 
     data = response.json()

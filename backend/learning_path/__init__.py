@@ -54,9 +54,17 @@ def _path_edges(path: list[str]) -> list[TripleItem]:
         relation = "先修知识"
 
         if kg.graph.has_edge(source, target):
-            relation = kg.graph.edges[source, target].get("relation", relation)
+            edge_data = kg.graph.get_edge_data(source, target) or {}
+            relation = next(
+                (item.get("relation", relation) for item in edge_data.values()),
+                relation,
+            )
         elif kg.graph.has_edge(target, source):
-            relation = kg.graph.edges[target, source].get("relation", relation)
+            edge_data = kg.graph.get_edge_data(target, source) or {}
+            relation = next(
+                (item.get("relation", relation) for item in edge_data.values()),
+                relation,
+            )
             source, target = target, source
 
         edges.append(TripleItem(head=source, relation=relation, tail=target))

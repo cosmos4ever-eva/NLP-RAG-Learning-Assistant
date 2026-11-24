@@ -1,9 +1,22 @@
 import unittest
+from unittest.mock import patch
 
 from evaluation.run_experiment import build_model_payload, resolve_provider
+from graph_rag.pipeline import resolve_generation_provider
 
 
 class ModelProviderTest(unittest.TestCase):
+    def test_product_generation_prefers_deepseek_when_configured(self):
+        with patch.dict(
+            "os.environ",
+            {"DEEPSEEK_API_KEY": "deepseek-key", "ECNUGPT_API_KEY": "ecnu-key"},
+            clear=True,
+        ):
+            provider = resolve_generation_provider()
+
+        self.assertEqual("deepseek", provider["name"])
+        self.assertEqual("deepseek-flash", provider["model"])
+
     def test_deepseek_default_is_non_thinking_flash(self):
         provider = resolve_provider('deepseek')
         payload = build_model_payload('test prompt', provider)
