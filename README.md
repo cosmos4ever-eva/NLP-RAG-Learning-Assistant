@@ -30,7 +30,8 @@ Content-Type: application/json
 
 {
   "goal": "先解释 Word2Vec 和 CBOW 的关系，再生成两道练习题",
-  "max_steps": 4
+  "max_steps": 4,
+  "max_reflections": 1
 }
 ```
 
@@ -42,3 +43,22 @@ Planner支持DeepSeek和ECNU模型供应商。有`DEEPSEEK_API_KEY`时默认使�
 DeepSeek；否则使用`ECNUGPT_API_KEY`。也可以通过
 `AGENT_MODEL_PROVIDER=deepseek|ecnu`固定供应商，通过`DEEPSEEK_MODEL`或
 `ECNUGPT_MODEL`固定模型版本。
+
+## Reflection Agent
+
+执行Agent生成结果后，独立的评测/反思Agent会检查目标完成度、课程依据和
+工具可靠性。评测Agent只负责返回结构化结论和修改要求，不能直接调用学习工具；
+执行Agent也不能自行判定最终通过。
+
+```text
+Learning Goal
+    -> Executor Agent
+    -> Reflection Agent
+         | pass   -> Final Result
+         | revise -> Feedback -> Executor Retry -> Re-review
+```
+
+默认最多反思重试一次。工具错误、空回答和未完成状态会在模型评审前被确定性
+规则直接退回；模型返回的完成度、依据性或工具可靠性低于阈值时，即使文字结论
+写成`pass`也会被改判为`revise`。达到重试上限后仍未通过时，接口返回
+`needs_revision`，不会把结果标记为完成。

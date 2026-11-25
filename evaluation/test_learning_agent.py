@@ -209,6 +209,18 @@ class AgentToolsTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("generate_quiz", tools)
         self.assertIn("learning_report", tools)
 
+    async def test_learning_path_edges_are_real_prerequisite_relations(self):
+        tools = build_default_tools()
+
+        result = await tools["learning_path"]({"target_entity": "Word2Vec"})
+
+        self.assertTrue(result["edges"])
+        self.assertTrue(all(edge["relation"] == "先修知识" for edge in result["edges"]))
+        self.assertNotIn(
+            {"head": "词嵌入", "relation": "相关概念", "tail": "分布式表示"},
+            result["edges"],
+        )
+
 
 class LearningAgentRouteTest(unittest.TestCase):
     def test_run_endpoint_returns_agent_trace(self):

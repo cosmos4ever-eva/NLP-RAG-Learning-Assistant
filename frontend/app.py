@@ -1454,7 +1454,7 @@ if active_tab == "学习Agent":
     st.subheader("NLP课程学习Agent")
     st.caption(
         "输入一个学习目标，Planner会在课程问答、概念对比、学习路径、自动出题、"
-        "学习诊断和Todo工具之间动态规划，并展示完整执行轨迹。"
+        "学习诊断和Todo工具之间动态规划；评测Agent会独立检查结果并在必要时触发修正。"
     )
     st.session_state.setdefault(
         "agent_goal_input",
@@ -1465,10 +1465,18 @@ if active_tab == "学习Agent":
         key="agent_goal_input",
         height=110,
     )
-    max_steps = st.slider("最大执行步数", min_value=1, max_value=8, value=4)
+    limit_cols = st.columns(2)
+    with limit_cols[0]:
+        max_steps = st.slider("单轮最大执行步数", min_value=1, max_value=8, value=4)
+    with limit_cols[1]:
+        max_reflections = st.slider("最多反思重试次数", min_value=0, max_value=2, value=1)
 
     if st.button("运行学习Agent", type="primary", key="run_learning_agent"):
-        payload = {"goal": agent_goal, "max_steps": max_steps}
+        payload = {
+            "goal": agent_goal,
+            "max_steps": max_steps,
+            "max_reflections": max_reflections,
+        }
         if st.session_state.get("learning_agent_session_id"):
             payload["session_id"] = st.session_state["learning_agent_session_id"]
         try:
@@ -1487,9 +1495,11 @@ if active_tab == "学习Agent":
     if agent_result:
         status = agent_result.get("status", "failed")
         status_text = {
-            "completed": "已完成",
+            "completed": "已完成并通过评测",
             "max_steps": "达到最大步数",
             "failed": "执行失败",
+            "needs_revision": "达到重试上限，仍需修改",
+            "review_failed": "执行完成，但独立评测暂不可用",
         }.get(status, status)
         st.markdown("### Agent结果")
         if status == "completed":
@@ -1497,6 +1507,41 @@ if active_tab == "学习Agent":
         else:
             st.warning(status_text)
         st.write(agent_result.get("final_answer", ""))
+
+        review = agent_result.get("review")
+        if review:
+            st.markdown("### 评测/反思Agent")
+            score_cols = st.columns(4)
+            score_cols[0].metric("执行轮次", agent_result.get("attempt_count", 1))
+            score_cols[1].metric("目标完成度", f"{review.get('goal_completion', 0):.0%}")
+            score_cols[2].metric("课程依据", f"{review.get('grounding', 0):.0%}")
+            score_cols[3].metric("工具可靠性", f"{review.get('tool_reliability', 0):.0%}")
+
+            verdict_text = "通过" if review.get("verdict") == "pass" else "需要修改"
+            st.write(f"**评测结论：{verdict_text}**")
+            for issue in review.get("issues", []):
+                st.warning(issue)
+            if review.get("feedback"):
+                st.info(f"反思建议：{review.get('feedback')}")
+
+            review_history = agent_result.get("review_history", [])
+            if len(review_history) > 1:
+                with st.expander("查看各轮评测记录"):
+                    st.dataframe(
+                        pd.DataFrame([
+                            {
+                                "轮次": item.get("attempt", index),
+                                "结论": "通过" if item.get("verdict") == "pass" else "修改",
+                                "目标完成度": item.get("goal_completion", 0),
+                                "课程依据": item.get("grounding", 0),
+                                "工具可靠性": item.get("tool_reliability", 0),
+                                "修改建议": item.get("feedback", ""),
+                            }
+                            for index, item in enumerate(review_history, start=1)
+                        ]),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
 
         next_actions = agent_result.get("next_actions", [])
         if next_actions:
@@ -1509,6 +1554,7 @@ if active_tab == "学习Agent":
         if tool_calls:
             rows = [
                 {
+                    "轮次": item.get("attempt", 1),
                     "步骤": item.get("step"),
                     "工具": item.get("tool", ""),
                     "状态": item.get("status", ""),

@@ -47,27 +47,16 @@ def _build_prerequisite_path(entity: str, visited: set[str] | None = None) -> li
 def _path_edges(path: list[str]) -> list[TripleItem]:
     kg = get_kg()
     edges = []
+    path_nodes = set(path)
 
-    for i in range(len(path) - 1):
-        source = path[i + 1]
-        target = path[i]
-        relation = "先修知识"
-
-        if kg.graph.has_edge(source, target):
-            edge_data = kg.graph.get_edge_data(source, target) or {}
-            relation = next(
-                (item.get("relation", relation) for item in edge_data.values()),
-                relation,
-            )
-        elif kg.graph.has_edge(target, source):
-            edge_data = kg.graph.get_edge_data(target, source) or {}
-            relation = next(
-                (item.get("relation", relation) for item in edge_data.values()),
-                relation,
-            )
-            source, target = target, source
-
-        edges.append(TripleItem(head=source, relation=relation, tail=target))
+    for concept in path:
+        for prerequisite in kg.get_prerequisites(concept):
+            if prerequisite in path_nodes:
+                edges.append(TripleItem(
+                    head=concept,
+                    relation="先修知识",
+                    tail=prerequisite,
+                ))
 
     return edges
 
