@@ -2,7 +2,7 @@
 公共数据模型 (Pydantic Schemas)
 你和 TA 都引用这里的结构，保证接口一致
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
@@ -41,6 +41,7 @@ class TripleItem(BaseModel):
     head: str       # 实体1
     relation: str   # 关系
     tail: str       # 实体2
+    evidence_id: Optional[str] = None
 
 
 class KGQueryRequest(BaseModel):
@@ -84,6 +85,17 @@ class RAGRequest(BaseModel):
     question: str
 
 
+class EvidenceItem(BaseModel):
+    """A short, user-checkable course evidence card."""
+    evidence_id: str
+    chunk_id: str
+    source: str
+    page: int = 0
+    excerpt: str
+    retrieval_reason: str = "semantic"
+    similarity: float = 0.0
+
+
 class RAGResponse(BaseModel):
     """RAG 问答结果"""
     question: str
@@ -94,6 +106,9 @@ class RAGResponse(BaseModel):
     evidence_score: float = 0.0
     evidence_level: str = "low"
     evidence_summary: str = ""
+    evidence_items: list[EvidenceItem] = Field(default_factory=list)
+    cited_evidence_items: list[EvidenceItem] = Field(default_factory=list)
+    cited_triples: list[TripleItem] = Field(default_factory=list)
 
 
 # ============ 学习路径（TA） ============

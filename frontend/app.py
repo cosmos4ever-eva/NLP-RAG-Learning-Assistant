@@ -214,12 +214,20 @@ def clear_quiz_runtime_state():
 
 def evidence_text(level: str, summary: str) -> tuple[str, str]:
     mapping = {
-        "high": ("证据充分", "本次回答同时检索到了课程资料和较丰富的知识图谱关系，有足够的外部支撑。"),
-        "medium": ("证据较充分", "本次回答有一定课程资料或知识图谱依据，但外部支撑还可以进一步补充。"),
-        "low": ("证据不足", "本次回答可用的外部依据较少，建议谨慎参考或补充课程资料。"),
+        "high": ("检索支撑较强", "课程资料中有高相关语义锚点，并有可核查的补充关系。"),
+        "medium": ("检索支撑一般", "检索到部分相关材料，但仍需结合短摘录判断是否直接回答了问题。"),
+        "low": ("检索支撑较弱", "缺少高相关课程锚点，应谨慎参考并补充资料。"),
     }
     title, default_detail = mapping.get(level, mapping["low"])
     return title, summary or default_detail
+
+
+def normalize_answer_for_display(answer: str) -> str:
+    """Defensively prevent generated prose from becoming an oversized heading."""
+    pattern = re.compile(
+        r"(?m)^###\s*(结论|关键辨析|易错点)\s*[：:]\s*(\S.*)$"
+    )
+    return pattern.sub(lambda match: f"### {match.group(1)}\n{match.group(2)}", answer or "").strip()
 
 
 def render_sources(sources: list[str]):
@@ -232,6 +240,49 @@ def render_sources(sources: list[str]):
         for index, source in enumerate(sources)
     ]
     st.dataframe(pd.DataFrame(source_rows), use_container_width=True, hide_index=True)
+
+
+def format_course_source(source: str, page: int = 0) -> str:
+    title = (source or "未知课程资料").replace("_", " ")
+    return f"{title} · 第 {page} 页" if page else title
+
+
+def render_evidence_overview(evidence_items: list[dict], triples: list[dict]):
+    """Show the evidence IDs used in the answer without forcing extra clicks."""
+    st.markdown("### 证据速览")
+    source_items = evidence_items[:3]
+    graph_items = triples[:3]
+
+    if not source_items and not graph_items:
+        st.info("本次回答没有可核查的课程证据。")
+        return
+
+    source_col, graph_col = st.columns(2, gap="large")
+    with source_col:
+        st.markdown("**课程资料**")
+        if not source_items:
+            st.caption("未检索到课程资料")
+        for item in source_items:
+            label = item.get("evidence_id", "S?")
+            st.markdown(
+                f"**[{label}] {format_course_source(item.get('source', ''), item.get('page', 0))}**"
+            )
+            st.caption(item.get("excerpt", "暂无摘录"))
+
+    with graph_col:
+        st.markdown("**概念关系**")
+        if not graph_items:
+            st.caption("未检索到知识图谱关系")
+        for index, triple in enumerate(graph_items, start=1):
+            evidence_id = triple.get("evidence_id") or f"G{index}"
+            st.markdown(
+                f"**[{evidence_id}]** {triple.get('head', '')} "
+                f"—{triple.get('relation', '')}→ {triple.get('tail', '')}"
+            )
+
+    hidden_count = max(0, len(evidence_items) - len(source_items)) + max(0, len(triples) - len(graph_items))
+    if hidden_count:
+        st.caption(f"另有 {hidden_count} 条证据，可在下方展开查看。")
 
 
 def render_review_concepts(concepts: list[str], label: str = "建议复习", key_prefix: str = ""):
@@ -1624,23 +1675,42 @@ if active_tab == "智能问答":
         try:
             data = post_json("/api/rag/ask", {"question": question})
             st.markdown("### 回答")
-            st.write(data.get("answer", ""))
+            st.markdown(normalize_answer_for_display(data.get("answer", "")))
 
-            st.markdown("### 证据充分性")
+            render_evidence_overview(
+                data.get("cited_evidence_items", []),
+                data.get("cited_triples", []),
+            )
+
             evidence_title, evidence_detail = evidence_text(
                 data.get("evidence_level", "low"),
                 data.get("evidence_summary", ""),
             )
-            st.success(f"{evidence_title}：{evidence_detail}")
-            st.caption(
-                f"课程资料来源 {len(data.get('sources', []))} 个；"
-                f"知识图谱关系 {len(data.get('related_triples', []))} 条。"
-            )
-
-            with st.expander("课程资料来源"):
-                render_sources(data.get("sources", []))
-
-            with st.expander("知识图谱关系"):
+            with st.expander("查看全部证据与图谱", expanded=False):
+                st.info(f"{evidence_title}：{evidence_detail}")
+                st.caption("该等级反映检索信号强弱，不等同于答案已经被人工验证。")
+                if data.get("evidence_items"):
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "编号": item.get("evidence_id", ""),
+                                    "课程资料": format_course_source(
+                                        item.get("source", ""), item.get("page", 0)
+                                    ),
+                                    "匹配方式": (
+                                        "语义命中"
+                                        if item.get("retrieval_reason") == "semantic"
+                                        else "相邻页上下文"
+                                    ),
+                                    "短摘录": item.get("excerpt", ""),
+                                }
+                                for item in data.get("evidence_items", [])
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
                 render_kg_relations(data.get("related_triples", []))
         except Exception as exc:
             show_error(exc)

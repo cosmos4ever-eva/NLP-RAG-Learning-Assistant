@@ -140,10 +140,10 @@ def format_ppt_context(search_results) -> str:
         return "未检索到相关课程资料。"
 
     lines = []
-    for result in search_results:
+    for index, result in enumerate(search_results, start=1):
         reason = "语义命中" if result.retrieval_reason == "semantic" else "相邻页上下文"
         lines.append(
-            f"[来源: {result.chunk.chunk_id} | {reason} | 相似度: {result.similarity}]\n"
+            f"[S{index}] [来源: {result.chunk.chunk_id} | {reason} | 相似度: {result.similarity}]\n"
             f"{result.chunk.text}"
         )
 
@@ -155,9 +155,71 @@ def format_kg_context(triples: list[dict]) -> str:
         return "未检索到相关知识图谱关系。"
 
     return "\n".join(
-        f"{triple['head']} -{triple['relation']}-> {triple['tail']}"
-        for triple in triples
+        f"[G{index}] {triple['head']} -{triple['relation']}-> {triple['tail']}"
+        for index, triple in enumerate(triples, start=1)
     )
+
+
+def build_evidence_items(search_results, max_excerpt_chars: int = 180) -> list[dict]:
+    """Turn retrieval results into concise evidence cards for the product UI."""
+    items = []
+    for index, result in enumerate(search_results, start=1):
+        excerpt = " ".join((result.chunk.text or "").split())
+        if len(excerpt) > max_excerpt_chars:
+            excerpt = excerpt[: max_excerpt_chars - 1].rstrip() + "…"
+        items.append(
+            {
+                "evidence_id": f"S{index}",
+                "chunk_id": result.chunk.chunk_id,
+                "source": result.chunk.source,
+                "page": result.chunk.page,
+                "excerpt": excerpt,
+                "retrieval_reason": result.retrieval_reason,
+                "similarity": float(result.similarity),
+            }
+        )
+    return items
+
+
+def select_cited_evidence(
+    answer: str,
+    evidence_items: list[dict],
+    triples: list[dict],
+    max_items: int = 4,
+) -> dict[str, list[dict]]:
+    """Return only evidence explicitly cited in the generated answer."""
+    cited_ids = []
+    for evidence_id in re.findall(r"\b([SG]\d+)\b", answer or "", flags=re.IGNORECASE):
+        normalized = evidence_id.upper()
+        if normalized not in cited_ids:
+            cited_ids.append(normalized)
+
+    course_by_id = {
+        str(item.get("evidence_id", "")).upper(): item
+        for item in evidence_items
+    }
+    graph_by_id = {
+        f"G{index}": {**triple, "evidence_id": f"G{index}"}
+        for index, triple in enumerate(triples, start=1)
+    }
+    selected = [
+        (evidence_id, course_by_id.get(evidence_id) or graph_by_id.get(evidence_id))
+        for evidence_id in cited_ids
+    ]
+    selected = [(evidence_id, item) for evidence_id, item in selected if item][:max_items]
+
+    return {
+        "course": [item for evidence_id, item in selected if evidence_id.startswith("S")],
+        "graph": [item for evidence_id, item in selected if evidence_id.startswith("G")],
+    }
+
+
+def normalize_answer_markdown(answer: str) -> str:
+    """Keep generated section titles compact even when the model writes inline."""
+    pattern = re.compile(
+        r"(?m)^###\s*(结论|关键辨析|易错点)\s*[：:]\s*(\S.*)$"
+    )
+    return pattern.sub(lambda match: f"### {match.group(1)}\n{match.group(2)}", answer).strip()
 
 
 def build_prompt(
@@ -200,36 +262,50 @@ def build_prompt(
 3. 使用适合学生理解的语言，解释清楚概念。
 4. 回答要有条理，可以分点说明。
 5. 如果涉及多个概念，请说明它们之间的关系。
-6. 不要在正文句子后面插入 [课程资料: ...] 或 [知识图谱: ...] 这类证据标签。
-7. 请按以下结构组织回答：
-   一、简明回答：直接回答学生问题，用自然语言解释清楚。
-   二、概念逻辑链条：把相关知识整理成“理论基础 -> 核心概念 -> 方法/模型 -> 训练技巧/应用”的学习顺序。
-   三、学习建议：给出一个简短的后续学习建议。
-8. “概念逻辑链条”部分不要在每一行后堆叠证据标签，只需要说明概念之间的逻辑关系。
-9. 不要单独输出“依据说明”“课程资料”“知识图谱”小节；系统会在回答下方用表格和图谱可视化单独展示来源与关系。
-10. 不要因为学生问题包含某个概念，就假定检索片段已经覆盖该概念。
+6. 关键结论末尾必须标出直接支持它的证据编号，例如 [S1] 或 [G2]；只能使用上文实际存在的编号。
+   全文最多使用 4 个不同的证据编号；只引用直接支持结论的证据，不要为了增加数量而堆叠编号。
+7. 请按以下紧凑结构组织回答：
+   ### 结论：标题必须单独占一行，下一行用不超过 120 个汉字直接回答问题。
+   ### 关键辨析：标题必须单独占一行，下一行开始列最多 3 个要点；每点最多 2 句。
+   ### 易错点：标题必须单独占一行，下一行最多 1 个要点；没有明显易错点时省略本节。
+8. 不要重复同一结论，不要输出泛泛的“学习建议”，除非学生明确询问学习路径。
+9. 不要单独复述完整课程资料或知识图谱；系统会在回答下方展示与证据编号对应的短摘录和关系。
+10. 不要因为学生问题包含某个概念，就假定检索片段已经覆盖该概念。证据不足的子问题要简短指出缺口。
+11. 如果问题涉及任务、模型与求解/解码方法，必须明确写出“任务 → 模型 → 算法”链条，且每一环都要有证据支持。
+12. 对算法过程或概念差异，在证据允许时补充 1 个不超过 60 个汉字的具体小例子；没有直接证据时不要自行编造例子。
 """.strip()
 
 
 def evaluate_evidence(search_results, kg_triples: list[dict]) -> dict:
-    """Score how well the answer is grounded by retrieved evidence."""
+    """Estimate retrieval support without treating neighbor-page volume as proof."""
     source_count = len(search_results)
     triple_count = len(kg_triples)
+    semantic_results = [
+        result for result in search_results
+        if result.retrieval_reason == "semantic"
+    ]
+    best_similarity = max(
+        (float(result.similarity) for result in semantic_results),
+        default=0.0,
+    )
 
-    source_score = min(source_count / 3, 1.0) * 0.55
-    graph_score = min(triple_count / 5, 1.0) * 0.45
+    source_score = min(best_similarity / 0.5, 1.0) * 0.65
+    graph_score = min(triple_count / 5, 1.0) * 0.35
     score = round(source_score + graph_score, 2)
 
-    if score >= 0.75:
+    # High support requires a strong course-material anchor. Graph volume and
+    # automatically expanded neighbor pages cannot produce a high label alone.
+    if best_similarity >= 0.3 and score >= 0.65:
         level = "high"
-    elif score >= 0.4:
+    elif best_similarity >= 0.15 or triple_count > 0:
         level = "medium"
     else:
         level = "low"
 
     summary = (
-        f"检索到 {source_count} 个课程资料片段，"
-        f"{triple_count} 条知识图谱关系，证据充分性为 {level}。"
+        f"{len(semantic_results)} 个语义锚点（最高相似度 {best_similarity:.2f}），"
+        f"扩展后共 {source_count} 个课程片段、{triple_count} 条图谱关系；"
+        f"检索支撑等级为 {level}。"
     )
 
     return {
@@ -326,12 +402,17 @@ def answer_question(question: str, top_k: int = 3, depth: int = 1) -> dict:
     )
     evidence = evaluate_evidence(search_results, kg_triples)
     prompt = build_prompt(question, search_results, kg_triples)
-    answer = call_ecnu_gpt(prompt)
+    answer = normalize_answer_markdown(call_ecnu_gpt(prompt))
+    evidence_items = build_evidence_items(search_results)
+    cited_evidence = select_cited_evidence(answer, evidence_items, kg_triples)
 
     return {
         "question": question,
         "answer": answer,
         "sources": [result.chunk.chunk_id for result in search_results],
+        "evidence_items": evidence_items,
+        "cited_evidence_items": cited_evidence["course"],
+        "cited_triples": cited_evidence["graph"],
         "related_triples": kg_triples,
         "prompt": prompt,
         **evidence,
