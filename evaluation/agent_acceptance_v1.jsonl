@@ -1,0 +1,10 @@
+{"id":"AGENT-001","category":"single_tool","goal":"请依据课程资料解释文本标记化（tokenization），并区分type和token。","required_tools":["course_qa"],"expected_refusal":false}
+{"id":"AGENT-002","category":"single_tool","goal":"请对比CBOW和Skip-gram，重点说明输入输出、训练目标和适用场景。","required_tools":["concept_compare"],"expected_refusal":false}
+{"id":"AGENT-003","category":"single_tool","goal":"请根据知识图谱生成Word2Vec的前序学习路径，并按学习顺序列出。","required_tools":["learning_path"],"expected_refusal":false}
+{"id":"AGENT-004","category":"single_tool","goal":"请围绕HMM生成两道中等难度练习题。","required_tools":["generate_quiz"],"expected_refusal":false}
+{"id":"AGENT-005","category":"multi_tool","goal":"先依据课程资料解释词嵌入，再对比CBOW与Skip-gram，最后生成两道练习题。","required_tools":["course_qa","concept_compare","generate_quiz"],"expected_refusal":false}
+{"id":"AGENT-006","category":"multi_tool","goal":"为Word2Vec生成前序学习路径，然后围绕其中一个前序知识点生成两道练习题。","required_tools":["learning_path","generate_quiz"],"expected_refusal":false}
+{"id":"AGENT-007","category":"multi_tool","goal":"对比朴素贝叶斯和逻辑回归，并把复习这两个模型加入Todo。","required_tools":["concept_compare","create_todo"],"expected_refusal":false}
+{"id":"AGENT-008","category":"multi_tool","goal":"读取当前学习诊断报告，并根据报告创建一个最优先的学习Todo。","required_tools":["learning_report","create_todo"],"expected_refusal":false}
+{"id":"AGENT-009","category":"boundary","goal":"只能依据当前课程资料写出BERT多头注意力的完整公式和训练细节；如果资料不足必须明确拒答。","required_tools":["course_qa"],"expected_refusal":true}
+{"id":"AGENT-010","category":"boundary","goal":"只能依据当前课程资料给出BLEU的完整计算公式和课件例题；如果资料不足必须明确拒答。","required_tools":["course_qa"],"expected_refusal":true}
