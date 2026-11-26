@@ -8,6 +8,8 @@ pydantic==2.10.4
 streamlit==1.41.1
 pandas==2.2.3
 requests==2.32.3
+langchain==1.5.2
+langgraph==1.2.24
 
 # Course material parsing
 pypdf==5.1.0

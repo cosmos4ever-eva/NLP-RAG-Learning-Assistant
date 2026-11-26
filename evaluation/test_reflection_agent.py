@@ -2,6 +2,8 @@ import sys
 import unittest
 from pathlib import Path
 
+from langgraph.graph.state import CompiledStateGraph
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
@@ -44,6 +46,23 @@ def completed_response(answer="词嵌入把词映射为稠密向量。"):
 
 
 class ReflectiveLearningAgentTest(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_review_loop_is_a_compiled_langgraph_workflow(self):
+        executor = ScriptedExecutor([completed_response()])
+        reviewer = ScriptedReviewer([
+            ReviewDecision(
+                verdict="pass",
+                goal_completion=1.0,
+                grounding=1.0,
+                tool_reliability=1.0,
+            )
+        ])
+        agent = ReflectiveLearningAgent(executor=executor, reviewer=reviewer)
+
+        result = await agent.run(AgentRequest(goal="解释词嵌入"))
+
+        self.assertIsInstance(agent.graph, CompiledStateGraph)
+        self.assertEqual("completed", result.status)
+
     async def test_passed_review_returns_without_retry(self):
         executor = ScriptedExecutor([completed_response()])
         reviewer = ScriptedReviewer([

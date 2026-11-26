@@ -3,14 +3,15 @@
 
 ## Learning Agent
 
-系统提供受控的 Planner–Executor 学习 Agent。用户提交学习目标后，Planner
-基于工具 Schema 选择下一步行动，Executor 调用白名单工具，将 Observation
-写入短期会话 Memory，并循环至完成或触发停止条件。
+系统基于 LangChain 与 LangGraph 提供受控的 Planner–Executor 学习 Agent。
+六类学习能力使用 LangChain 结构化工具封装；用户提交学习目标后，Planner
+基于工具 Schema 选择下一步行动，LangGraph Executor 调用白名单工具，将
+Observation 写入线程级短期会话状态，并循环至完成或触发停止条件。
 
 ```text
-Goal -> Plan -> Tool Calling -> Observation -> Re-plan / Finish
+START -> Plan -> Tool Calling -> Observation -> Re-plan / Finish
                     |                         |
-                    +---- Memory / Trace -----+
+                    +-- Checkpoint / Trace ---+
 ```
 
 当前工具：
@@ -36,8 +37,9 @@ Content-Type: application/json
 ```
 
 Agent返回最终答复、下一步行动、工具调用记录和Planner–Executor Trace。
-同一`session_id`会复用最近20条工具Observation。工具白名单、结构化决策、
-重复调用阻断、最大步数和失败降级共同构成执行Guardrails。
+LangGraph的`InMemorySaver`以`session_id`作为`thread_id`保存线程级Checkpoint，
+同一进程中的后续请求可复用最近20条工具Observation；服务重启后该短期状态会
+清空。工具白名单、结构化决策、重复调用阻断、最大步数和失败降级共同约束执行。
 
 Planner支持DeepSeek和ECNU模型供应商。有`DEEPSEEK_API_KEY`时默认使用
 DeepSeek；否则使用`ECNUGPT_API_KEY`。也可以通过
@@ -46,9 +48,9 @@ DeepSeek；否则使用`ECNUGPT_API_KEY`。也可以通过
 
 ## Reflection Agent
 
-执行Agent生成结果后，独立的评测/反思Agent会检查目标完成度、课程依据和
-工具可靠性。评测Agent只负责返回结构化结论和修改要求，不能直接调用学习工具；
-执行Agent也不能自行判定最终通过。
+执行Agent生成结果后，LangGraph将状态路由到独立的评测/反思Agent，检查目标
+完成度、课程依据和工具可靠性。评测Agent只负责返回结构化结论和修改要求，不能
+直接调用学习工具；执行Agent也不能自行判定最终通过。
 
 ```text
 Learning Goal

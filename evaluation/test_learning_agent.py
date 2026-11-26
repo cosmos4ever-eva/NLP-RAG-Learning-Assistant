@@ -4,6 +4,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from langchain_core.tools import BaseTool
+from langgraph.graph.state import CompiledStateGraph
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +29,17 @@ class ScriptedPlanner:
 
 
 class LearningAgentTest(unittest.IsolatedAsyncioTestCase):
+    async def test_executor_is_a_compiled_langgraph_workflow(self):
+        planner = ScriptedPlanner([
+            PlannerDecision(action="finish", final_answer="图工作流已完成")
+        ])
+        agent = LearningAgent(planner=planner, tools={})
+
+        result = await agent.run(AgentRequest(goal="验证工作流", max_steps=2))
+
+        self.assertIsInstance(agent.graph, CompiledStateGraph)
+        self.assertEqual("completed", result.status)
+
     async def test_executes_planned_tool_and_returns_observable_trace(self):
         planner = ScriptedPlanner([
             PlannerDecision(
@@ -121,6 +134,30 @@ class LearningAgentTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("重复", result.tool_calls[1].error)
         self.assertEqual("completed", result.status)
 
+    async def test_langgraph_stops_after_configured_tool_step_limit(self):
+        planner = ScriptedPlanner([
+            PlannerDecision(
+                action="tool", tool="course_qa", arguments={"question": "第一步"}
+            ),
+            PlannerDecision(
+                action="tool", tool="course_qa", arguments={"question": "第二步"}
+            ),
+        ])
+        execution_count = 0
+
+        async def course_qa(arguments):
+            nonlocal execution_count
+            execution_count += 1
+            return {"answer": arguments["question"]}
+
+        agent = LearningAgent(planner=planner, tools={"course_qa": course_qa})
+        result = await agent.run(AgentRequest(goal="执行多步任务", max_steps=2))
+
+        self.assertEqual(2, execution_count)
+        self.assertEqual("max_steps", result.status)
+        self.assertIn("最大执行步数", result.final_answer)
+        self.assertEqual("guardrail", result.trace[-1].phase)
+
 
 class ModelPlannerTest(unittest.TestCase):
     def test_parses_a_structured_tool_decision_from_model_output(self):
@@ -198,10 +235,17 @@ class AgentModelProviderTest(unittest.TestCase):
 
 
 class AgentToolsTest(unittest.IsolatedAsyncioTestCase):
+    async def test_six_learning_capabilities_are_structured_langchain_tools(self):
+        tools = build_default_tools()
+
+        self.assertEqual(6, len(tools))
+        self.assertTrue(all(isinstance(item, BaseTool) for item in tools.values()))
+        self.assertIn("target_entity", tools["learning_path"].args)
+
     async def test_learning_path_tool_uses_the_real_course_graph(self):
         tools = build_default_tools()
 
-        result = await tools["learning_path"]({"target_entity": "Word2Vec"})
+        result = await tools["learning_path"].ainvoke({"target_entity": "Word2Vec"})
 
         self.assertEqual("Word2Vec", result["target"])
         self.assertIn("Word2Vec", result["path"])
@@ -212,7 +256,7 @@ class AgentToolsTest(unittest.IsolatedAsyncioTestCase):
     async def test_learning_path_edges_are_real_prerequisite_relations(self):
         tools = build_default_tools()
 
-        result = await tools["learning_path"]({"target_entity": "Word2Vec"})
+        result = await tools["learning_path"].ainvoke({"target_entity": "Word2Vec"})
 
         self.assertTrue(result["edges"])
         self.assertTrue(all(edge["relation"] == "先修知识" for edge in result["edges"]))
