@@ -31,6 +31,8 @@
 
 `TEST_EVALUATION_20261124.md` 是提交 `8c55b6d` 冻结后唯一一次 sealed-test 运行的最终报告。该结果只能用于报告与未来版本的整体比较，不能再用于修改当前冻结版本。
 
+`RETRIEVAL_UPGRADE_EXPERIMENT_20261126.md` 记录了 TF-IDF、BGE-M3、Qdrant混合检索、BGE Reranker、显式图与离线图Embedding的dev消融，以及冻结候选的一次sealed test。原始逐题运行仍保存在被忽略的 `private_runs/`。
+
 ## 建议比较的系统
 
 保持同一大模型、temperature、最大输出长度和问题顺序，只改变可用上下文：

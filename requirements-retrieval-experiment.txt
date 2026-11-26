@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Optional retrieval-upgrade experiment (CPU or CUDA)
+sentence-transformers==6.3.0
+qdrant-client==1.20.0
+huggingface-hub==1.31.0
