@@ -3,10 +3,33 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from evaluation.run_retrieval_upgrade_experiment import load_cases, summarize_rows
+from evaluation.run_retrieval_upgrade_experiment import (
+    load_cases,
+    should_apply_reranker,
+    summarize_rows,
+)
+from shared.schemas import ChunkItem, SearchResult
+
+
+def result(score: float) -> SearchResult:
+    return SearchResult(
+        chunk=ChunkItem(
+            chunk_id=str(score),
+            text="text",
+            source="lecture",
+            page=1,
+            chunk_index=0,
+        ),
+        similarity=score,
+    )
 
 
 class RetrievalUpgradeExperimentTest(unittest.TestCase):
+    def test_adaptive_reranker_only_routes_tied_top_candidates(self):
+        self.assertTrue(should_apply_reranker([result(0.4), result(0.4)]))
+        self.assertFalse(should_apply_reranker([result(0.4), result(0.39)]))
+        self.assertFalse(should_apply_reranker([result(0.4)]))
+
     def test_sealed_test_requires_explicit_opt_in(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "questions.jsonl"

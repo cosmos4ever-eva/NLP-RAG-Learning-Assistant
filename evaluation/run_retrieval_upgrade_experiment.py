@@ -106,6 +106,17 @@ def _reciprocal_rank(
     return 0.0
 
 
+def should_apply_reranker(
+    candidates: list[SearchResult],
+    tie_margin: float = 0.0,
+) -> bool:
+    """Route ambiguous sparse retrievals without using labels or test metadata."""
+    if len(candidates) < 2:
+        return False
+    margin = float(candidates[0].similarity) - float(candidates[1].similarity)
+    return margin <= tie_margin + 1e-12
+
+
 def evaluate_configuration(
     cases: list[dict],
     search: Callable[[str], list[SearchResult]],
@@ -113,6 +124,7 @@ def evaluate_configuration(
     include_graph: bool = False,
     graph_embedding: FastRPStyleEmbedding | None = None,
     graph_embedding_candidates: int = 2,
+    rerank_decisions: dict[str, bool] | None = None,
 ) -> list[dict]:
     rows = []
     for case in cases:
@@ -158,6 +170,11 @@ def evaluate_configuration(
                 ),
                 "retrieved_triples": len(triples),
                 "graph_embedding_candidates": graph_candidates,
+                "rerank_applied": (
+                    rerank_decisions.get(case["question"])
+                    if rerank_decisions is not None
+                    else None
+                ),
                 "anchor_chunks": [result.chunk.chunk_id for result in anchors],
                 "context_chunks": [result.chunk.chunk_id for result in context],
                 "latency_ms": round(latency_ms, 3),
@@ -173,6 +190,7 @@ def summarize_rows(rows: list[dict]) -> dict:
         for row in rows
         if row["required_relations"] and row["relation_recall"] is not None
     ]
+    routed_rows = [row for row in rows if row.get("rerank_applied") is not None]
     return {
         "cases": len(rows),
         "evidence_cases": len(evidence_rows),
@@ -213,6 +231,11 @@ def summarize_rows(rows: list[dict]) -> dict:
         "mean_latency_ms": (
             sum(float(row["latency_ms"]) for row in rows) / len(rows)
             if rows
+            else None
+        ),
+        "rerank_rate": (
+            sum(bool(row["rerank_applied"]) for row in routed_rows) / len(routed_rows)
+            if routed_rows
             else None
         ),
     }
@@ -270,6 +293,7 @@ def main() -> None:
         "E_explicit_graph",
         "F_graph_embedding",
         "G_tfidf_rerank_graph",
+        "H_adaptive_tfidf_rerank_graph",
     }
     requested = {
         name.strip() for name in args.configs.split(",") if name.strip()
@@ -297,6 +321,7 @@ def main() -> None:
                 "E_explicit_graph",
                 "F_graph_embedding",
                 "G_tfidf_rerank_graph",
+                "H_adaptive_tfidf_rerank_graph",
             }
         )
     )
@@ -418,6 +443,49 @@ def main() -> None:
             "graph_embedding": None,
         }
 
+        adaptive_cache: dict[str, list[SearchResult]] = {}
+        adaptive_decisions: dict[str, bool] = {}
+
+        def adaptive_tfidf_rerank(question: str) -> list[SearchResult]:
+            if question in adaptive_cache:
+                return list(adaptive_cache[question])
+            candidates = tfidf.search(question, top_k=args.candidate_k)
+            use_reranker = should_apply_reranker(candidates)
+            adaptive_decisions[question] = use_reranker
+            if use_reranker:
+                scores = reranker.score(
+                    question,
+                    [result.chunk.text for result in candidates],
+                )
+                ranked = [
+                    SearchResult(
+                        chunk=result.chunk,
+                        similarity=round(float(score), 6),
+                        retrieval_reason="semantic",
+                    )
+                    for result, score in sorted(
+                        zip(candidates, scores),
+                        key=lambda item: float(item[1]),
+                        reverse=True,
+                    )[: args.top_k]
+                ]
+            else:
+                ranked = candidates[: args.top_k]
+            adaptive_cache[question] = ranked
+            return list(ranked)
+
+        configurations["H_adaptive_tfidf_rerank_graph"] = {
+            "search": adaptive_tfidf_rerank,
+            "context": lambda question: expand_neighbor_context(
+                chunks,
+                adaptive_tfidf_rerank(question),
+                neighbor_window=args.neighbor_window,
+            ),
+            "include_graph": True,
+            "graph_embedding": None,
+            "rerank_decisions": adaptive_decisions,
+        }
+
     if modern is not None:
         configurations["E_explicit_graph"] = {
             **configurations[best_mode_name],
@@ -459,6 +527,7 @@ def main() -> None:
             include_graph=config["include_graph"],
             graph_embedding=config["graph_embedding"],
             graph_embedding_candidates=args.graph_embedding_candidates,
+            rerank_decisions=config.get("rerank_decisions"),
         )
         rows_by_configuration[name] = rows
         summaries[name] = summarize_rows(rows)
