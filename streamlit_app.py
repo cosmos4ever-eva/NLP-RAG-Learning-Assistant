@@ -39,8 +39,13 @@ def _secret(name: str) -> str:
         return ""
 
 
-@st.cache_resource
 def start_backend() -> TestClient:
+    """Connect the Streamlit run to the in-process FastAPI application.
+
+    TestClient must not be stored in ``st.cache_resource``. Streamlit 1.41 can
+    finish the script immediately after replaying that cached resource, which
+    leaves Community Cloud with a healthy process but an empty page.
+    """
     environment = build_backend_environment(os.environ, _secret)
     os.environ.update(environment)
     backend_directory = str(ROOT / "backend")
