@@ -17,11 +17,12 @@ API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
 API_SESSION = get_local_api_client()
 
 
-st.set_page_config(
-    page_title="NLP Graph-RAG Teaching Assistant",
-    page_icon="",
-    layout="wide",
-)
+if os.getenv("STREAMLIT_PAGE_CONFIGURED") != "1":
+    st.set_page_config(
+        page_title="NLP Graph-RAG Teaching Assistant",
+        page_icon="",
+        layout="wide",
+    )
 
 
 def post_json(path: str, payload: dict):

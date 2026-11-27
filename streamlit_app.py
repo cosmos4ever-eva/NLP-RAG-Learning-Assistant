@@ -21,6 +21,13 @@ ROOT = Path(__file__).resolve().parent
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
 API_URL = f"http://127.0.0.1:{BACKEND_PORT}"
 
+st.set_page_config(
+    page_title="NLP Graph-RAG Teaching Assistant",
+    page_icon="",
+    layout="wide",
+)
+os.environ["STREAMLIT_PAGE_CONFIGURED"] = "1"
+
 
 def _secret(name: str) -> str:
     value = os.getenv(name, "").strip()
