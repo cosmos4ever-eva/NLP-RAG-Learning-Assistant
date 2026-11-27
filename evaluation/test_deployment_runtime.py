@@ -44,6 +44,18 @@ class DeploymentRuntimeTest(unittest.TestCase):
 
         self.assertEqual("existing-model", environment["DEEPSEEK_MODEL"])
 
+    def test_local_backend_bypasses_cloud_proxy(self):
+        environment = build_backend_environment(
+            {"NO_PROXY": "metadata.internal", "no_proxy": "metadata.internal"},
+            lambda _name: "",
+        )
+
+        for name in ("NO_PROXY", "no_proxy"):
+            hosts = environment[name].split(",")
+            self.assertIn("127.0.0.1", hosts)
+            self.assertIn("localhost", hosts)
+            self.assertIn("metadata.internal", hosts)
+
 
 if __name__ == "__main__":
     unittest.main()

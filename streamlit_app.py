@@ -35,6 +35,8 @@ def _secret(name: str) -> str:
 @st.cache_resource
 def start_backend() -> subprocess.Popen[str]:
     environment = build_backend_environment(os.environ, _secret)
+    for name in ("NO_PROXY", "no_proxy"):
+        os.environ[name] = environment[name]
     command, working_directory = backend_process_spec(ROOT, BACKEND_PORT)
     process = subprocess.Popen(
         command,

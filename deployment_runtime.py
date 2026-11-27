@@ -24,6 +24,14 @@ def build_backend_environment(
 ) -> dict[str, str]:
     """Merge non-empty deployment secrets without erasing existing values."""
     environment = dict(base_environment)
+    for name in ("NO_PROXY", "no_proxy"):
+        existing_hosts = [
+            host.strip() for host in environment.get(name, "").split(",") if host.strip()
+        ]
+        for local_host in ("127.0.0.1", "localhost"):
+            if local_host not in existing_hosts:
+                existing_hosts.append(local_host)
+        environment[name] = ",".join(existing_hosts)
     for name in MODEL_CONFIGURATION_NAMES:
         value = secret_loader(name).strip()
         if value:
