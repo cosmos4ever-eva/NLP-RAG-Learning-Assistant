@@ -6,7 +6,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from deployment_runtime import backend_process_spec, build_backend_environment
+from deployment_runtime import (
+    backend_process_spec,
+    build_backend_environment,
+    build_local_api_session,
+)
 
 
 class DeploymentRuntimeTest(unittest.TestCase):
@@ -55,6 +59,11 @@ class DeploymentRuntimeTest(unittest.TestCase):
             self.assertIn("127.0.0.1", hosts)
             self.assertIn("localhost", hosts)
             self.assertIn("metadata.internal", hosts)
+
+    def test_local_api_session_ignores_proxy_environment(self):
+        session = build_local_api_session()
+
+        self.assertFalse(session.trust_env)
 
 
 if __name__ == "__main__":

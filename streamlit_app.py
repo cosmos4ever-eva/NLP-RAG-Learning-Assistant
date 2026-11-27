@@ -14,12 +14,17 @@ from pathlib import Path
 import requests
 import streamlit as st
 
-from deployment_runtime import backend_process_spec, build_backend_environment
+from deployment_runtime import (
+    backend_process_spec,
+    build_backend_environment,
+    build_local_api_session,
+)
 
 
 ROOT = Path(__file__).resolve().parent
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
 API_URL = f"http://127.0.0.1:{BACKEND_PORT}"
+API_SESSION = build_local_api_session()
 
 
 def _secret(name: str) -> str:
@@ -50,7 +55,7 @@ def start_backend() -> subprocess.Popen[str]:
                 f"FastAPI backend exited during startup with code {process.returncode}"
             )
         try:
-            response = requests.get(f"{API_URL}/health", timeout=1)
+            response = API_SESSION.get(f"{API_URL}/health", timeout=1)
             if response.ok:
                 return process
         except requests.RequestException:

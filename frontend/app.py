@@ -6,12 +6,14 @@ import re
 from urllib.parse import quote
 
 import pandas as pd
-import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
+from deployment_runtime import build_local_api_session
+
 
 API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
+API_SESSION = build_local_api_session()
 
 
 st.set_page_config(
@@ -22,25 +24,25 @@ st.set_page_config(
 
 
 def post_json(path: str, payload: dict):
-    response = requests.post(f"{API_BASE}{path}", json=payload, timeout=180)
+    response = API_SESSION.post(f"{API_BASE}{path}", json=payload, timeout=180)
     response.raise_for_status()
     return response.json()
 
 
 def get_json(path: str):
-    response = requests.get(f"{API_BASE}{path}", timeout=60)
+    response = API_SESSION.get(f"{API_BASE}{path}", timeout=60)
     response.raise_for_status()
     return response.json()
 
 
 def patch_json(path: str, payload: dict):
-    response = requests.patch(f"{API_BASE}{path}", json=payload, timeout=60)
+    response = API_SESSION.patch(f"{API_BASE}{path}", json=payload, timeout=60)
     response.raise_for_status()
     return response.json()
 
 
 def delete_json(path: str):
-    response = requests.delete(f"{API_BASE}{path}", timeout=60)
+    response = API_SESSION.delete(f"{API_BASE}{path}", timeout=60)
     response.raise_for_status()
     return response.json()
 
@@ -53,7 +55,7 @@ def upload_course_file(uploaded_file):
             "application/pdf",
         )
     }
-    response = requests.post(f"{API_BASE}/api/parsing/upload", files=files, timeout=180)
+    response = API_SESSION.post(f"{API_BASE}/api/parsing/upload", files=files, timeout=180)
     response.raise_for_status()
     return response.json()
 

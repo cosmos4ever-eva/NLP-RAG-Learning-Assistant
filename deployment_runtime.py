@@ -6,6 +6,8 @@ import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
+import requests
+
 
 MODEL_CONFIGURATION_NAMES = (
     "DEEPSEEK_API_KEY",
@@ -16,6 +18,13 @@ MODEL_CONFIGURATION_NAMES = (
     "ECNUGPT_API_KEY",
     "ECNUGPT_MODEL",
 )
+
+
+def build_local_api_session() -> requests.Session:
+    """Create a session that never routes localhost traffic through cloud proxies."""
+    session = requests.Session()
+    session.trust_env = False
+    return session
 
 
 def build_backend_environment(
