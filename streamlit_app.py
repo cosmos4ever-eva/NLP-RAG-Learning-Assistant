@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
 import requests
 import streamlit as st
+
+from deployment_runtime import backend_process_spec, build_backend_environment
 
 
 ROOT = Path(__file__).resolve().parent
@@ -33,18 +34,19 @@ def _secret(name: str) -> str:
 
 @st.cache_resource
 def start_backend() -> subprocess.Popen[str]:
-    environment = os.environ.copy()
-    environment["ECNUGPT_API_KEY"] = _secret("ECNUGPT_API_KEY")
-    environment["ECNUGPT_MODEL"] = _secret("ECNUGPT_MODEL") or "ecnu-plus"
+    environment = build_backend_environment(os.environ, _secret)
+    command, working_directory = backend_process_spec(ROOT, BACKEND_PORT)
     process = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", str(BACKEND_PORT)],
-        cwd=ROOT,
+        command,
+        cwd=working_directory,
         env=environment,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
         text=True,
     )
     for _ in range(30):
+        if process.poll() is not None:
+            raise RuntimeError(
+                f"FastAPI backend exited during startup with code {process.returncode}"
+            )
         try:
             response = requests.get(f"{API_URL}/health", timeout=1)
             if response.ok:
@@ -52,6 +54,7 @@ def start_backend() -> subprocess.Popen[str]:
         except requests.RequestException:
             time.sleep(0.25)
     process.terminate()
+    process.wait(timeout=5)
     raise RuntimeError("FastAPI backend did not become ready")
 
 
