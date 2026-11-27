@@ -6,14 +6,15 @@ import re
 from urllib.parse import quote
 
 import pandas as pd
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
-from deployment_runtime import build_local_api_session
+from deployment_runtime import get_local_api_client
 
 
 API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000")
-API_SESSION = build_local_api_session()
+API_SESSION = get_local_api_client()
 
 
 st.set_page_config(

@@ -1,30 +1,25 @@
 """Streamlit Community Cloud entrypoint for the original frontend.
 
-The original UI keeps calling the FastAPI routes. This entrypoint starts that
-API in the same container before importing the existing Streamlit app.
+The original UI keeps calling the FastAPI routes. On Community Cloud this
+entrypoint connects it to the same FastAPI app in-process, avoiding a second
+localhost server inside the Streamlit sandbox.
 """
 
 from __future__ import annotations
 
 import os
-import subprocess
-import time
+import sys
 from pathlib import Path
 
-import requests
+from fastapi.testclient import TestClient
 import streamlit as st
 
-from deployment_runtime import (
-    backend_process_spec,
-    build_backend_environment,
-    build_local_api_session,
-)
+from deployment_runtime import build_backend_environment, install_local_api_client
 
 
 ROOT = Path(__file__).resolve().parent
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
 API_URL = f"http://127.0.0.1:{BACKEND_PORT}"
-API_SESSION = build_local_api_session()
 
 
 def _secret(name: str) -> str:
@@ -38,31 +33,19 @@ def _secret(name: str) -> str:
 
 
 @st.cache_resource
-def start_backend() -> subprocess.Popen[str]:
+def start_backend() -> TestClient:
     environment = build_backend_environment(os.environ, _secret)
-    for name in ("NO_PROXY", "no_proxy"):
-        os.environ[name] = environment[name]
-    command, working_directory = backend_process_spec(ROOT, BACKEND_PORT)
-    process = subprocess.Popen(
-        command,
-        cwd=working_directory,
-        env=environment,
-        text=True,
-    )
-    for _ in range(30):
-        if process.poll() is not None:
-            raise RuntimeError(
-                f"FastAPI backend exited during startup with code {process.returncode}"
-            )
-        try:
-            response = API_SESSION.get(f"{API_URL}/health", timeout=1)
-            if response.ok:
-                return process
-        except requests.RequestException:
-            time.sleep(0.25)
-    process.terminate()
-    process.wait(timeout=5)
-    raise RuntimeError("FastAPI backend did not become ready")
+    os.environ.update(environment)
+    backend_directory = str(ROOT / "backend")
+    if backend_directory not in sys.path:
+        sys.path.insert(0, backend_directory)
+    from main import app as backend_app
+
+    client = TestClient(backend_app)
+    health = client.get("/health")
+    health.raise_for_status()
+    install_local_api_client(client)
+    return client
 
 
 start_backend()

@@ -10,6 +10,8 @@ from deployment_runtime import (
     backend_process_spec,
     build_backend_environment,
     build_local_api_session,
+    get_local_api_client,
+    install_local_api_client,
 )
 
 
@@ -64,6 +66,14 @@ class DeploymentRuntimeTest(unittest.TestCase):
         session = build_local_api_session()
 
         self.assertFalse(session.trust_env)
+
+    def test_in_process_client_can_replace_http_session(self):
+        client = object()
+        install_local_api_client(client)
+        try:
+            self.assertIs(client, get_local_api_client())
+        finally:
+            install_local_api_client(None)
 
 
 if __name__ == "__main__":

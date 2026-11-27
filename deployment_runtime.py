@@ -5,6 +5,7 @@ import os
 import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import Any
 
 import requests
 
@@ -19,12 +20,25 @@ MODEL_CONFIGURATION_NAMES = (
     "ECNUGPT_MODEL",
 )
 
+_LOCAL_API_CLIENT: Any | None = None
+
 
 def build_local_api_session() -> requests.Session:
     """Create a session that never routes localhost traffic through cloud proxies."""
     session = requests.Session()
     session.trust_env = False
     return session
+
+
+def install_local_api_client(client: Any | None) -> None:
+    """Install an in-process API client for single-container deployments."""
+    global _LOCAL_API_CLIENT
+    _LOCAL_API_CLIENT = client
+
+
+def get_local_api_client() -> Any:
+    """Return the injected in-process client or a proxy-free HTTP session."""
+    return _LOCAL_API_CLIENT or build_local_api_session()
 
 
 def build_backend_environment(
