@@ -1,6 +1,7 @@
 ﻿# Web backend
 fastapi==0.115.6
 uvicorn==0.34.0
+websockets>=16.1.1,<17
 python-multipart==0.0.20
 pydantic==2.10.4
 
